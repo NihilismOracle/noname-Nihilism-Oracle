@@ -1,0 +1,766 @@
+import { lib, game, ui, get, ai, _status } from '../../../../noname.js';
+export const 其疾如风 = {
+    zshy_AAZZweiyanSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_kuanggu`, `zshy_qimou`],
+
+    },
+    zshy_AAZZxiahouyuanSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_shensu`, `zshy_shebian`],
+
+    },
+    zshy_AAZZcaorenSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_jushou`, `zshy_jiewei`],
+
+    },
+    zshy_AAZZxiaoqiaoSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `female`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_tianxiang`, `zshy_hongyan`, `zshy_piaoling`],
+
+    },
+    zshy_AAZZhuangzhongSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_liegong`],
+
+    },
+    zshy_AAZZzhoutaiSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_buqu`, `zshy_fenji`],
+
+    },
+    zshy_AAZZyujiSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_guhuo`],
+
+    },
+    zshy_AAZZzhangjiaoSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_leiji`, `zshy_guidao`, `zshy_huangtian`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZshenguanyuSHZL: {
+        hp: 5,
+        maxHp: 5,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_wushen`, `zshy_wuhun`],
+
+    },
+    zshy_AAZZshenlvmengSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_shelie`, `zshy_SLMgongxin`],
+
+    },
+};
+export const 侵略如火 = {
+    zshy_AAZZdianweiSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_qiangxi`, `zshy_ninge`],
+
+    },
+    zshy_AAZZxunyuSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_quhu`, `zshy_jieming`],
+
+    },
+    zshy_AAZZpangtongSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_lianhuan`, `zshy_niepan`],
+
+    },
+    zshy_AAZZwolongzhugeliangSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_huoji`, `zshy_bazhen`, `zshy_kanpo`, `zshy_cangzhuo`],
+
+    },
+    zshy_AAZZtaishiciSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_tianyi`, `zshy_hanzhan`],
+
+    },
+    zshy_AAZZpangdeSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_jianchu`, `zshy_PDmashu`],
+
+    },
+    zshy_AAZZyanliangwenchouSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_shuangxiong`],
+
+    },
+    zshy_AAZZyuanshaoSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_luanji`, `zshy_xueyi`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZshenzhouyuSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_yeyan`, `zshy_qinyin`],
+
+    },
+    zshy_AAZZshenzhugeliangSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_qixing`, `zshy_dawu`, `zshy_kuangfeng`],
+
+    },
+};
+export const 其徐如林 = {
+    zshy_AAZZxuhuangSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_duanliang`, `zshy_jiezi`],
+
+    },
+    zshy_AAZZcaopiSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_fangzhu`, `zshy_xingshang`, `zshy_songwei`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZsunjianSHZL: {
+        hp: 4,
+        maxHp: 5,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_yinghun`, `zshy_wulie`, `zshy_polu`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZdongzhuoSHZL: {
+        hp: 8,
+        maxHp: 8,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_jiuchi`, `zshy_roulin`, `zshy_benghuai`, `zshy_baonue`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZzhurongSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `female`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        skills: [`zshy_juxiang`, `zshy_lieren`, `zshy_changbiao`],
+
+        isAiForbidden: true,
+        trashBin: [`shu`],
+    },
+    zshy_AAZZmenghuoSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_huoshou`, `zshy_zaiqi`],
+
+    },
+    zshy_AAZZjiaxuSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_wansha`, `zshy_luanwu`, `zshy_weimu`],
+
+    },
+    zshy_AAZZlusuSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_haoshi`, `zshy_dimeng`],
+
+    },
+    zshy_AAZZshenlvbuSHZL: {
+        hp: 6,
+        maxHp: 6,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_kuangbao`, `zshy_wumou`, `zshy_wuqian`, `zshy_shenfen`, `zshy_SLBwushuang`],
+
+    },
+    zshy_AAZZshencaocaoSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_guixin`, `zshy_feiying`],
+
+        isZhugong: true,
+
+    },
+
+};
+export const 不动如山 = {
+    zshy_AAZZzhangheSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_qiaobian`],
+
+    },
+    zshy_AAZZdengaiSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_tuntian`, `zshy_zaoxian`],
+
+    },
+    zshy_AAZZjiangweiSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_tiaoxin`, `zshy_zhiji`],
+
+    },
+    zshy_AAZZliushanSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_fangquan`, `zshy_xiangle`, `zshy_ruoyu`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZsunceSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_jiang`, `zshy_hunzi`, `zshy_zhiba`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZzhangzhaozhanghongSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_zhijian`, `zshy_guzheng`],
+
+    },
+    zshy_AAZZzuociSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_huashen`, `zshy_xinsheng`],
+
+    },
+    zshy_AAZZcaiwenjiSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `female`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_beige`, `zshy_duanchang`],
+
+    },
+    zshy_AAZZshensimayiSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `jin`,
+        skills: [`zshy_renjie`, `zshy_lianpo`, `zshy_baiyin`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZshenzhaoyunSHZL: {
+        hp: 2,
+        maxHp: 2,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_longhun`, `zshy_juejing`],
+
+    },
+
+};
+export const 难知如阴 = {
+    zshy_AAZZwangjiSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_qizhi`, `zshy_jinqu`],
+
+    },
+    zshy_AAZZyanyanSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_juzhan`],
+
+    },
+    zshy_AAZZwangpingSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_feijun`, `zshy_binglve`],
+
+    },
+    zshy_AAZZlujiSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_huaiju`, `zshy_yili`, `zshy_zhenglun`],
+
+    },
+    zshy_AAZZsunliangSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_kuizhu`, `zshy_chezheng`, `zshy_lijun`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZpengliangpengyueSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_jianxiang`, `zshy_shenshi`],
+
+    },
+    zshy_AAZZxuyouSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_chenglve`, `zshy_shicai`, `zshy_cunmu`],
+
+    },
+    zshy_AAZZluzhiSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_mingren`, `zshy_zhenliang`],
+
+    },
+    zshy_AAZZshenliubeiSHZL: {
+        hp: 6,
+        maxHp: 6,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_longnu`, `zshy_jieying`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZshenluxunSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_junlve`, `zshy_cuike`, `zshy_zhanhuo`],
+
+    },
+
+};
+export const 动如雷震 = {
+    zshy_AAZZyuanshuSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_yongsi`, `zshy_weidi`],
+
+        isZhugong: true,
+
+    },
+    zshy_AAZZhaozhaoSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_zhengu`],
+
+    },
+    zshy_AAZZchendaoSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_wanglie`],
+
+    },
+    zshy_AAZZzhugezhanSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `male`,
+        group: `shu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `shu`,
+        skills: [`zshy_zuilun`, `zshy_fuyin`],
+
+    },
+    zshy_AAZZzhoufeiSHZL: {
+        hp: 3,
+        maxHp: 3,
+        hujia: 0,
+        sex: `female`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_liangyin`, `zshy_kongsheng`],
+
+    },
+    zshy_AAZZguanqiujianSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wei`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_zhengrong`, `zshy_hongju`],
+
+    },
+    zshy_AAZZlukangSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `wu`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_qianjie`, `zshy_jueyan`, `zshy_poshi`],
+
+    },
+    zshy_AAZZzhangxiuSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `qun`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `qun`,
+        skills: [`zshy_xiongluan`, `zshy_congjian`],
+
+    },
+    zshy_AAZZshenzhangliaoSHZL: {
+        hp: 4,
+        maxHp: 4,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wei`,
+        skills: [`zshy_duorui`, `zshy_zhiti`],
+
+    },
+    zshy_AAZZshenganningSHZL: {
+        hp: 3,
+        maxHp: 6,
+        hujia: 0,
+        sex: `male`,
+        group: `shen`,
+        doubleGroup: [],
+        groupBorder: ``,
+        groupInGuozhan: `wu`,
+        skills: [`zshy_poxi`, `zshy_SGNjieying`],
+
+    },
+};
+
+export const characters = {
+    ...其疾如风, ...侵略如火, ...其徐如林, ...不动如山, ...难知如阴, ...动如雷震,
+};
+export default characters;
