@@ -4,14 +4,14 @@
 
 | 项目 | 当前信息 |
 | --- | --- |
-| 扩展版本 | 1.0.3 |
+| 扩展版本 | 1.0.4 |
 | 更新日期 | 2026-11-13 |
 | 适配本体 | 无名杀 1.11.6.1 |
 | 扩展作者 | 云烫半月霞 |
 | 安装目录名 | `诸神寰宇` |
 | 联机状态 | 当前入口与武将包均设置为 `connect: false`，未启用联机支持 |
 
-[更新公告](更新公告.md) · [完整更新日志](更新日志.md) · [问题反馈](https://github.com/NihilismOracle/noname-Nihilism-Oracle/issues)
+[下载最新安装包](https://github.com/NihilismOracle/noname-Nihilism-Oracle/releases/latest) · [更新公告](更新公告.md) · [完整更新日志](更新日志.md) · [问题反馈](https://github.com/NihilismOracle/noname-Nihilism-Oracle/issues)
 
 ## 扩展内容
 
@@ -24,10 +24,12 @@
 
 本仓库需要配合无名杀本体使用。当前按 **1.11.6.1** 的接口维护，其他本体版本尚未在本仓库中验证。
 
-1. 从仓库页面的 **Code → Download ZIP** 下载源码，或使用 Git 克隆仓库。
-2. 解压后，将包含 `extension.js`、`packages.js`、`info.json` 的这一层目录命名为 **诸神寰宇**，放入本体的 `extension` 目录。
-3. 按所用客户端的扩展管理流程加载并启用「诸神寰宇」，然后重启游戏。
+1. 打开 [Releases 下载页](https://github.com/NihilismOracle/noname-Nihilism-Oracle/releases/latest)，选择 **诸神寰宇1.0.4.zip**（后续版本按「诸神寰宇＋版本号.zip」命名）。
+2. 支持扩展 ZIP 导入的客户端可直接导入该安装包。手动安装时，将压缩包内容解压到本体的 **`extension/诸神寰宇/`** 目录。
+3. 按所用客户端的扩展管理流程启用「诸神寰宇」，然后重启游戏。
 4. 更新已有安装时，先备份旧目录，再用新版本文件替换对应文件。
+
+安装包打开后的根目录直接包含 `info.json`、`extension.js`、`packages.js` 和各资源目录，不包含 `noname-Nihilism-Oracle-main/` 等外层目录。安装包中不含测试、开发脚本或 Git 相关文件。
 
 目录结构应为：
 
@@ -45,9 +47,13 @@
         └── audio/
 ```
 
-仓库下载后的目录名可能带有 `-main`。安装时必须改成 `诸神寰宇`，并避免多套一层文件夹：资源路径使用 `extension/诸神寰宇/`，模块导入也依赖上面的目录层级。
+GitHub 的 **Code → Download ZIP** 与 Release 自动附带的 **Source code (zip)** 是源码归档，仍带仓库名外层目录。安装请下载命名为 **诸神寰宇＋版本号.zip** 的附件。手动安装的目录仍须叫 `诸神寰宇`，资源路径和模块导入依赖上面的目录层级。
 
-## 1.0.3 技能修复摘要
+## 1.0.4 发布方式更新
+
+新增无外层目录的安装 ZIP、版本命名、SHA-256 校验文件及标签自动发布流程；本次没有武将技能调整。
+
+## 1.0.3 技能修复摘要（历史版本）
 
 - 审时保持1点伤害及交给一张牌，每张赠牌独立追踪并最多结算一次；返乡补摸四张并强制觉醒。
 - 相胥取消隐藏次数限制并修复弃牌分支；清靓取消隐藏次数限制，第二项弃置一种花色的所有手牌；定措修复颜色、弃牌及伤害选择。
@@ -81,7 +87,8 @@
 | `extension/updateInfo.js` | 从更新公告生成的本次更新摘要与版本信息 |
 | `extension/versionCharacters.js` | 按版本维护新增与修改武将列表，兼容旧日期条目 |
 | `audio/`、`image/`、`skin/`、`other/` | 音频、图片、皮肤及其他资源 |
-| `scripts/` | 更新信息同步工具 |
+| `scripts/` | 更新信息同步与安装包构建工具 |
+| `.github/workflows/release.yml` | 标签触发的安装包发布流程 |
 | `tests/` | 技能回调回归测试 |
 | `更新日志.md`、`更新公告.md` | 完整改动记录与面向玩家的精简公告 |
 
@@ -104,7 +111,8 @@ node --experimental-vm-modules --test tests/skill-regressions.cjs
 3. 运行下面的同步命令，生成 `extension/updateInfo.js` 并同步 `info.json` 的版本号。
 4. 按扩展版本更新 `extension/versionCharacters.js` 中实际新增或修改的武将；同步README里的版本、日期及相关说明。
 5. 核对 `packages.js` 与 `extension.js` 的展示和引用。它们从同一份生成数据取得版本信息，无需重复写死版本号。
-6. 完成与改动相关的验证，核对本地文件与仓库提交内容后同步发布。
+6. 完成与改动相关的验证，核对本地文件与仓库提交内容后同步到GitHub。
+7. 为完成的版本推送 `v版本号` 标签（例如 `v1.0.4`），等待「发布扩展安装包」工作流成功，确认Releases中出现对应安装包。已公开版本不自动覆盖，后续修改使用新版本号。
 
 ```sh
 # 根据更新公告同步生成文件
@@ -115,6 +123,15 @@ node scripts/sync-update-info.cjs --check
 ```
 
 `extension/updateInfo.js` 是生成文件，请修改《更新公告.md》后重新运行脚本。
+
+本地构建安装包（Python 3.11或更高版本）：
+
+```sh
+node scripts/sync-update-info.cjs --check
+python scripts/build-release.py
+```
+
+结果位于 `dist/`，文件名自动读取版本号。构建会检查ZIP根目录、文件完整性与版本一致性；`dist/` 已忽略，不提交压缩包到源码仓库。
 
 ## 反馈与交流
 
