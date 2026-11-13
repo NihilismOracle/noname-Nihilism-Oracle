@@ -90,7 +90,7 @@ export const 万象归一 = {
         hp: Infinity,
         maxHp: Infinity,
         hujia: 0,
-        sex: 'male',
+        sex: 'none',
         group: 'key',
         skills: ['zshy_H'],
     },
