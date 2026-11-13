@@ -20,6 +20,7 @@ export default function () {
         precontent,
         config,
         help,
+        // 版本及信息栏随 packages.js 读取的公告数据同步，入口不另存一份版本号。
         package: packages,
         files,
     };

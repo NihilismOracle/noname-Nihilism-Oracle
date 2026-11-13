@@ -10,12 +10,12 @@ function setstyle1(str) {
     return `<span data-nature='shenmm'><font color='#000000'>${str}</font></span>`;
 }
 
-// 更新信息统一在这里改：更新时间 / 更新版本 / 适配本体版本
-const UPDATE_DATE = '20261113';
-const VERSION = '1.0.1';
-const GAME_VERSION = '1.11.6.1';
+// 日期、版本与适配本体统一取自公告生成数据，避免与 info.json 分别维护后产生偏差。
+const UPDATE_DATE = updateInfo.date;
+const VERSION = updateInfo.version;
+const GAME_VERSION = updateInfo.gameVersion;
 
-// 本次更新条目来自 updateInfo.js（由《更新日志.md》自动生成）
+// 本次更新条目来自 updateInfo.js（由《更新公告.md》经 scripts/sync-update-info.cjs 生成）
 const latestUpdate = updateInfo;
 const updateItems = (latestUpdate.items || []).map(function (text) {
     return '<span style="display:block;">· ' + text + '</span>';

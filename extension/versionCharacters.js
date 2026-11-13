@@ -2,6 +2,6 @@
 export const versionCharacters = {
     '20261113': {
         new: ['zshy_WXGYHun'],
-        changed: ['zshy_AAZZyuanshuSHZL', 'zshy_AAZZchendaoSHZL'],
+        changed: ['zshy_AAZZyuanshuSHZL', 'zshy_AAZZchendaoSHZL', 'zshy_AAZZsimazhouWDWB'],
     },
 };
