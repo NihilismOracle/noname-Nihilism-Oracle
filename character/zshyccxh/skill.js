@@ -800,33 +800,27 @@ const 天极·皇室宗亲 = {
         },
         filter(event, player) {
             const target = _status.currentPhase;
-            if (!target?.isIn()) {
-                return false;
-            }
+            if (!target?.isIn()) return false;
             const num = target.countCards('h') - player.countCards('h');
-            if (num == 0) {
-                return false;
-            }
-            return num > 0 || player.countDisabledSlot(player, 'h');
+            return num > 0 || (num < 0 && player.countDiscardableCards(player, 'h') > 0);
         },
         check(event, player) {
             const target = _status.currentPhase,
                 num = target.countCards('h') - player.countCards('h');
             return num > 0 || player.isDamaged();
         },
-        usable: 1,
+
         logTarget: () => _status.currentPhase,
         async content(event, trigger, player) {
-            const target = _status.currentPhase,
-                num = target.countCards('h') - player.countCards('h');
+            const target = _status.currentPhase;
+            if (!target?.isIn()) return;
+            const num = target.countCards('h') - player.countCards('h');
             if (num > 0) {
-                await player.draw(num);
-                await player.recover(num);
-            } else {
+                const result = await player.draw(num).forResult();
+                if (result?.cards?.length) await player.recover(result.cards.length);
+            } else if (num < 0) {
                 const result = await player.chooseToDiscard(-num, 'h', true, 'allowChooseAll').forResult();
-                if (result.bool && result?.cards?.length > 0) {
-                    await player.recover(result.cards.length);
-                }
+                if (result?.cards?.length) await player.recover(result.cards.length);
             }
         },
     },
@@ -1722,7 +1716,7 @@ const 天极·皇室宗亲 = {
             }
             return player != event.player && player.countCards('h') > 0;
         },
-        usable: 1,
+
         logTarget: 'player',
         check(event, player) {
             if (get.attitude(player, event.player) > 0 || event.player.hasSkillTag('nogain')) {
@@ -1755,44 +1749,34 @@ const 天极·皇室宗亲 = {
         },
         async content(event, trigger, player) {
             await player.showHandcards(get.translation(player) + '发动了【清靓】');
-            const suits = [],
-                banned = [],
-                hs = player.getCards('h');
-            for (const i of hs) {
-                const suit = get.suit(i, player);
-                suits.add(suit);
-                if (!lib.filter.cardDiscardable(i, player, 'zshy_qingliang')) {
-                    banned.add(suit);
-                }
+            const hs = player.getCards('h');
+            const suits = [...new Set(hs.map(card => get.suit(card, player)))].filter(suit =>
+                hs.filter(card => get.suit(card, player) === suit).every(card => lib.filter.cardDiscardable(card, player, 'zshy_qingliang')));
+            let index = 0;
+            if (suits.length) {
+                const result = await player.chooseControl({
+                    choiceList: ['和' + get.translation(trigger.player) + '各摸一张牌', '取消此目标，然后弃置一种花色的所有手牌'],
+                    ai() { return get.effect(player, trigger.card, trigger.player, player) < 0 ? 1 : 0; },
+                }).forResult();
+                index = result.index;
             }
-            let result;
-            if (suits.length > banned.length) {
-                result = await player
-                    .chooseControl({
-                        choiceList: ['和' + get.translation(trigger.player) + '各摸一张牌', '弃置一种花色的所有手牌，令' + get.translation(trigger.card) + '对自己无效'],
-                        ai() {
-                            const player = _status.event.player,
-                                event = _status.event.getTrigger();
-                            if (get.attitude(player, event.player) > 0 || event.player.hasSkillTag('nogain')) {
-                                return 0;
-                            }
-                            return 1;
-                        },
-                    })
-                    .forResult();
-                suits.removeArray(banned);
-                suits.sort();
-            } else {
-                result = { index: 0 };
-            }
-            if (result.index == 0) {
+            if (index === 0) {
                 await game.asyncDraw([player, trigger.player]);
-            } else {
-                trigger.targets.remove(player);
-                trigger.getParent().triggeredTargets2.remove(player);
-                trigger.untrigger();
-                await player.chooseToDiscard('he', true);
-            };
+                return;
+            }
+            const result = await player.chooseControl(suits)
+                .set('prompt', '清靓：选择一种花色，弃置该花色的所有手牌')
+                .set('ai', () => suits.reduce((best, suit) => {
+                    const cost = value => player.getCards('h', card => get.suit(card, player) === value).reduce((sum, card) => sum + get.value(card, player), 0);
+                    return cost(suit) < cost(best) ? suit : best;
+                }, suits[0])).forResult();
+            if (!suits.includes(result.control)) return;
+            const cards = player.getCards('h', card => get.suit(card, player) === result.control);
+            if (!cards.length || !cards.every(card => lib.filter.cardDiscardable(card, player, 'zshy_qingliang'))) return;
+            trigger.targets.remove(player);
+            trigger.getParent().triggeredTargets2.remove(player);
+            trigger.untrigger();
+            await player.discard(cards);
         },
     },
 
@@ -2976,21 +2960,18 @@ const 四弼·辅国文曲 = {
         frequent: true,
         async content(event, trigger, player) {
             const result = await player.draw(2).forResult();
-            if (result) {
-                if (get.color(result) != 'none') {
-                    player.recover();
-                } else {
-                    player.chooseToDiscard(result, true);
-                    const result1 = await player.chooseTarget('定措：选择一名其他角色对其造成1点伤害', function (card, player, target) {
-                        return target != player;
-                    }).set('ai', function (target) {
-                        return get.damageEffect(target, player, player) > 0;
-                    }).forResult();
-                    if (result1 && result1.targets) {
-                        result1.targets[0].damage();
-                    }
-                }
+            const cards = result?.cards || [];
+            if (cards.length !== 2) return;
+            if (get.color(cards[0], player) === get.color(cards[1], player)) {
+                await player.recover();
+                return;
             }
+            await player.chooseToDiscard('h', 1, true);
+            if (!game.hasPlayer(target => target !== player)) return;
+            const choice = await player.chooseTarget(true, '定措：对一名其他角色造成1点伤害',
+                (card, player, target) => target !== player)
+                .set('ai', target => get.damageEffect(target, player, player)).forResult();
+            if (choice.targets?.[0]?.isIn()) await choice.targets[0].damage(1, player);
         },
     },
 

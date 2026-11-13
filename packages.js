@@ -51,7 +51,7 @@ function characterCards(ids) {
 }
 
 function versionCharactersHtml() {
-    const data = (versionCharacters && versionCharacters[latestUpdate.date]) || {};
+    const data = (versionCharacters && (versionCharacters[latestUpdate.version] || versionCharacters[latestUpdate.date])) || {};
     const added = data.new || [];
     const changed = data.changed || [];
     let html = '';

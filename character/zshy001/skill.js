@@ -3946,10 +3946,11 @@ const SP系列 = {
         forced: true,
         async content(event, trigger, player) {
             player.awakenSkill(event.name);
-            player.gainMaxHp();
-            player.recoverTo(1);
+            await player.gainMaxHp();
+            await player.recoverTo(1);
+            await player.draw(4);
             await player.changeSkills(['zshy_xiaoji'], ['zshy_liangzhu']);
-            player.changeGroup('wu');
+            await player.changeGroup('wu');
             if (get.mode() == 'guozhan') player.identity = 'wu';
         },
         ai: {

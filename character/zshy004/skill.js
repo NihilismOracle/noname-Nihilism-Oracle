@@ -609,7 +609,7 @@ const 文德武备理 = {
         },
     },
     zshy_AAZZchelijiWDWB_sichengliangyu: {//四乘粮舆
-        trigger: { global: 'phaseJieshuBegin' },
+        trigger: { global: 'phaseEnd' },
         equipSkill: true,
         cardcolor: 'heart',
         filter(event, player) {
@@ -618,17 +618,15 @@ const 文德武备理 = {
         check(event, player) {
             return get.attitude(player, event.player) > 1;
         },
-        content() {
-            'step 0';
-            trigger.player.draw(2);
-            trigger.player.recover();
-            'step 1';
-            var card = player.getEquip('zshy_AAZZchelijiWDWB_sichengliangyu');
-            if (card) player.discard(card);
+        async content(event, trigger, player) {
+            await trigger.player.draw(2);
+            if (trigger.player.isIn()) await trigger.player.recover();
+            const card = player.getEquip('zshy_AAZZchelijiWDWB_sichengliangyu');
+            if (card) await player.discard(card);
         },
     },
     zshy_AAZZchelijiWDWB_tiejixuanyu: {//铁蒺玄舆
-        trigger: { global: 'phaseJieshuBegin' },
+        trigger: { global: 'phaseEnd' },
         equipSkill: true,
         cardcolor: 'club',
         filter(event, player) {
@@ -638,17 +636,16 @@ const 文德武备理 = {
         check(event, player) {
             return get.attitude(player, event.player) < 0;
         },
-        content() {
-            'step 0';
-            if (trigger.player.countCards('he') > 0) trigger.player.chooseToDiscard('he', 2, true);
-            trigger.player.damage();
-            'step 1';
-            var card = player.getEquip('zshy_AAZZchelijiWDWB_tiejixuanyu');
-            if (card) player.discard(card);
+        async content(event, trigger, player) {
+            const target = trigger.player;
+            if (target.countCards('he')) await target.chooseToDiscard('he', 2, true);
+            if (target.isIn()) await target.damage(1, player);
+            const card = player.getEquip('zshy_AAZZchelijiWDWB_tiejixuanyu');
+            if (card) await player.discard(card);
         },
     },
     zshy_AAZZchelijiWDWB_feilunzhanyu: {//飞轮战舆
-        trigger: { global: 'phaseJieshuBegin' },
+        trigger: { global: 'phaseEnd' },
         equipSkill: true,
         cardcolor: 'spade',
         filter(event, player) {
@@ -658,15 +655,15 @@ const 文德武备理 = {
         check(event, player) {
             return get.attitude(player, event.player) <= 0;
         },
-        content() {
-            'step 0';
-            if (trigger.player.countCards('he') > 0) trigger.player.chooseCard('he', true, '将一张牌交给' + get.translation(player));
-            'step 1';
-            if (result.bool) trigger.player.give(result.cards, player);
-            trigger.player.damage();
-            'step 2';
-            var card = player.getEquip('zshy_AAZZchelijiWDWB_feilunzhanyu');
-            if (card) player.discard(card);
+        async content(event, trigger, player) {
+            const target = trigger.player;
+            if (target.countCards('he')) {
+                const result = await target.chooseCard('he', true, '将一张牌交给' + get.translation(player)).forResult();
+                if (result.bool && result.cards?.length) await target.give(result.cards, player);
+            }
+            if (target.isIn()) await target.damage(1, player);
+            const card = player.getEquip('zshy_AAZZchelijiWDWB_feilunzhanyu');
+            if (card) await player.discard(card);
         },
     },
 

@@ -3473,11 +3473,12 @@ const 其徐如林 = {
                 locked: false,
                 forced: true,
                 filter(event, player) {
-                    if (event.name == 'chooseToUse') return player.hasCard(card => get.suit(card) == 'spade', 'he');
-                    return event.card && get.name(event.card) == 'sha' && event.getParent(2).jiu == true && !player.hasSkill('zshy_benghuai_ban');
+                    const use = event.getParent('useCard');
+                    return _status.currentPhase === player && event.card && get.name(event.card) === 'sha' &&
+                        use?.player === player && use.jiu === true && !player.hasSkill('zshy_benghuai_ban');
                 },
                 content() {
-                    player.addTempSkill('zshy_benghuai_ban');
+                    player.addTempSkill('zshy_benghuai_ban', { player: 'phaseAfter' });
                 },
             },
             hit: {
@@ -3487,7 +3488,7 @@ const 其徐如林 = {
                     player: 'useCard',
                 },
                 filter(event, player) {
-                    return event.getParent(2).jiu == true;
+                    return player.hasSkill('jiu') || player.storage.jiu > 0 || event.jiu === true;
                 },
                 preHidden: true,
                 content() {
@@ -3498,7 +3499,7 @@ const 其徐如林 = {
                     pretao: true,
                     directHit_ai: true,
                     skillTagFilter(player, tag, arg) {
-                        return true;
+                        return player.hasSkill('jiu') || player.storage.jiu > 0 || arg?.card?.jiu === true;
                     },
                 },
             },
@@ -3562,34 +3563,16 @@ const 其徐如林 = {
         },
         forced: true,
         filter(event, player) {
-            return !player.isMinHp();
+            return !player.hasSkill('zshy_benghuai_ban') && !player.isMinHp();
         },
         async content(event, trigger, player) {
-            if (player.hasSkill('zshy_benghuai_ban')) {
-                player.draw(2);
-                event.finish();
-            }
-            var str1 = '失去体力', str2 = '减少上限';
-            const result = await player.chooseControl(str1, str2).set('prompt', '崩坏：失去1点体力或减少1点体力上限')
-                .set('ai', function (event, player) {
-                    if (player.hp == player.maxHp) return str1;
-                    if (player.hp < player.maxHp - 1 || player.hp <= 2) return str2;
-                    return str1;
-                }).forResult();
-            if (result && result.control) {
-                switch (result.control) {
-                    case str1:
-                        player.loseHp();
-                        player.draw();
-                        break;
-                    case str2:
-                        player.loseMaxHp();
-                        player.draw();
-                        break;
-                    default:
-                        break;
-                }
-            }
+            const result = await player.chooseControl('失去体力', '减少上限')
+                .set('prompt', '崩坏：失去1点体力或减少1点体力上限')
+                .set('ai', () => player.hp < player.maxHp - 1 || player.hp <= 2 ? '减少上限' : '失去体力').forResult();
+            if (result.control === '失去体力') await player.loseHp();
+            else if (result.control === '减少上限') await player.loseMaxHp();
+            else return;
+            await player.draw();
         },
         ai: {
             threaten: 0.5,
@@ -3602,9 +3585,13 @@ const 其徐如林 = {
                 onremove: true,
                 charlotte: true,
                 marktext: '酒池',
-                intro: {
-                    name2: '酒池',
-                    content: '本回合〖崩坏〗效果已转变',
+                intro: { name2: '酒池', content: '本回合〖崩坏〗改为：回合结束时，摸两张牌' },
+                trigger: { player: 'phaseEnd' },
+                forced: true,
+                filter(event, player) { return player.hasSkill('zshy_benghuai') && !player.storage.zshy_benghuai_ban; },
+                async content(event, trigger, player) {
+                    player.storage.zshy_benghuai_ban = true;
+                    await player.draw(2);
                 },
             },
         }
@@ -6020,9 +6007,7 @@ const 不动如山 = {
             extra: {
                 sub: true,
                 audio: 'zshy_lianpo',
-                trigger: {
-                    global: 'phaseJieshuAfter',
-                },
+                trigger: { global: 'phaseAfter' },
                 check(event, player) {
                     return player.isTurnedOver() || player.hp < 2 || player.countMark('zshy_renjie') > 3 || Math.random() < 0.5;
                 },
@@ -6030,12 +6015,12 @@ const 不动如山 = {
                     return player.hasMark('zshy_lianpo');
                 },
                 prompt2:  '弃置1枚「破」、回复1点体力并摸一张牌，然后复原武将牌并执行1个额外回合',
-                content() {
-                    'step 0'
+                async content(event, trigger, player) {
                     player.removeMark('zshy_lianpo', 1);
-                    player.recover(), player.draw();
-                    player.link(false), player.turnOver(false);
-                    'step 1'
+                    await player.recover();
+                    await player.draw();
+                    if (player.isLinked()) await player.link(false);
+                    if (player.isTurnedOver()) await player.turnOver(false);
                     player.insertPhase();
                 },
             },
@@ -6744,7 +6729,7 @@ const 难知如阴 = {
     },
     zshy_shenshi: {//审时
         audio: 'ext:诸神寰宇/audio/character:2',
-        prompt: '出牌阶段限1次，你可以对一名除你以外手牌数最多的角色造成1点伤害并将一张牌交给该角色，然后你可以令一名角色将手牌摸至X张（X为其体力上限）',
+        prompt: '出牌阶段限一次，你可对一名除你外手牌数最多的角色造成1点伤害并交给其一张手牌或装备牌，然后可令一名角色将手牌摸至其体力上限',
         enable: 'phaseUse',
         usable: 1,
         filter(event, player) {
@@ -6757,32 +6742,19 @@ const 难知如阴 = {
         position: 'he',
         filterCard: true,
         filterTarget(card, player, target) {
-            if (player.getCards('h').includes(card => (name = 'tao'))) return false;
-            return (
-                target != player && !game.hasPlayer(function (current) {
-                    return current != player && current.countCards('h') > target.countCards('h');
-                })
-            );
+            return target !== player && !game.hasPlayer(current => current !== player && current.countCards('h') > target.countCards('h'));
         },
         check(card) {
             return 5 - get.value(card);
         },
-        content() {
-            'step 0'
-            var target = event.target;
-            target.damage(1, 'nocard');
-            player.give(event.cards, target);
-            'step 1'
-            player.chooseTarget('令一名角色将手牌摸至X张（X为其体力上限）', function (card, player, target) {
-                return target.countCards('h') < target.maxHp;
-            }).set('ai', function (target) {
-                return get.attitude(player, target);
-            });
-            'step 2'
-            if (result.bool) {
-                player.line(result.targets);
-                result.targets[0].drawTo(result.targets[0].maxHp);
-            }
+        async content(event, trigger, player) {
+            const target = event.target || event.targets[0];
+            await target.damage(1, player, 'nocard');
+            if (target.isIn()) await player.give(event.cards, target);
+            const result = await player.chooseTarget('令一名角色将手牌摸至其体力上限',
+                (card, player, target) => target.countCards('h') < target.maxHp)
+                .set('ai', target => get.attitude(player, target)).forResult();
+            if (result.bool && result.targets?.[0]?.isIn()) await result.targets[0].drawTo(result.targets[0].maxHp);
         },
         ai: {
             order: 1,
@@ -6806,42 +6778,52 @@ const 难知如阴 = {
                     return event.source && event.source.countCards('h') <= 2 && player.countCards('h') < 4;
                 },
                 logTarget: 'source',
-                prompt2: '其他角色对你造成伤害后，你可以观看该角色的手牌，然后交给其一张牌，当前角色回合结束时，若此牌仍在该角色的区域内，你将手牌摸至Y张（Y为你的体力上限）',
+                prompt2: '观看伤害来源的手牌并交给其一张手牌或装备牌；其之后造成伤害后或当前回合结束时，若此牌仍在其手牌区、装备区或判定区，你将手牌摸至自己的体力上限，每张赠牌仅结算一次',
                 async content(event, trigger, player) {
-                    await player.viewHandcards(trigger.source);
-                    const result = await player.chooseCard('he', true, '交给' + get.translation(trigger.source) + '一张牌').set('ai', function (card) {
-                        return 5 - get.value(card);
-                    }).forResult();
-                    if (result.bool) {
-                        await player.give(result.cards, trigger.source);
-                        trigger.source.storage.zshy_shenshi1 = result.cards[0];
-                        trigger.source.storage.zshy_shenshi2 = player;
-                        trigger.source.addSkill('zshy_shenshi_sub1');
-                    };
+                    const source = trigger.source;
+                    const turn = trigger.getParent('phase', true);
+                    if (trigger.zshy_shenshi_id == null) trigger.zshy_shenshi_id = lib.status.videoId++;
+                    if (turn && turn.zshy_shenshi_id == null) turn.zshy_shenshi_id = lib.status.videoId++;
+                    await player.viewHandcards(source);
+                    if (!source.isIn()) return;
+                    const result = await player.chooseCard('he', true, '交给' + get.translation(source) + '一张牌')
+                        .set('ai', card => 5 - get.value(card, player)).forResult();
+                    if (!result.bool || !result.cards?.length) return;
+                    if (!player.storage.zshy_shenshi_watch) player.storage.zshy_shenshi_watch = [];
+                    player.storage.zshy_shenshi_watch.push({ card: result.cards[0], source,
+                        damageId: trigger.zshy_shenshi_id, turnId: turn?.zshy_shenshi_id ?? null });
+                    player.addSkill('zshy_shenshi_watch');
+                    await player.give(result.cards, source);
                 },
             },
-            sub1: {
-                audio: 'zshy_shenshi',
-                trigger: {
-                    global: 'phaseJieshuBegin',
-                },
+            watch: {
+                charlotte: true,
                 forced: true,
                 popup: false,
-                charlotte: true,
-                sourceSkill: 'zshy_shenshi',
-                filter(event, player) {
-                    return player.storage.zshy_shenshi1 != undefined && player.storage.zshy_shenshi2 != undefined;
+                lastDo: true,
+                onremove: true,
+                trigger: { global: ['damageEnd', 'phaseEnd', 'phaseAfter'] },
+                filter(event, player, name) {
+                    return player.getStorage('zshy_shenshi_watch').some(record => {
+                        if (name === 'damageEnd') return record.source === event.source && record.damageId !== event.zshy_shenshi_id &&
+                            record.source.getCards('hej').includes(record.card);
+                        return record.turnId == null || record.turnId === event.zshy_shenshi_id;
+                    });
                 },
                 async content(event, trigger, player) {
-                    const pl = player.storage.zshy_shenshi2;
-                    const card = player.storage.zshy_shenshi1;
-                    if (player.getCards('he').includes(card) && pl.maxHp - pl.countCards('h') > 0) {
-                        await pl.drawTo(pl.maxHp);
-                        pl.logSkill('zshy_shenshi');
+                    const ending = event.triggername !== 'damageEnd';
+                    const records = player.getStorage('zshy_shenshi_watch').slice();
+                    for (const record of records) {
+                        const pending = player.getStorage('zshy_shenshi_watch');
+                        if (!pending.includes(record)) continue;
+                        const present = record.source.getCards('hej').includes(record.card);
+                        const matches = ending ? record.turnId == null || record.turnId === trigger.zshy_shenshi_id :
+                            record.source === trigger.source && record.damageId !== trigger.zshy_shenshi_id && present;
+                        if (!matches) continue;
+                        pending.remove(record);
+                        if (present && player.isIn()) await player.drawTo(player.maxHp);
                     }
-                    player.removeSkill('zshy_shenshi1');
-                    delete player.storage.zshy_shenshi1;
-                    delete player.storage.zshy_shenshi2;
+                    if (!player.getStorage('zshy_shenshi_watch').length) player.removeSkill('zshy_shenshi_watch');
                 },
             },
         },
@@ -9091,41 +9073,27 @@ const 动如雷震 = {
                         return current.hasMark('zshy_SGNjieying_Mark');
                     });
                 },
-                content() {
-                    'step 0'
-                    var str = '令一名其他角色获得你所有的「营」';
-                    player.chooseTarget(get.prompt('zshy_SGNjieying'), str, [1, 1], function (card, player, target) {
-                        return target != player;
-                    }).ai = function (target) {
-                        return get.attitude(player, target);
-                    };
-                    'step 1'
-                    if (result.bool) {
-                        var num = player.countMark('zshy_SGNjieying_Mark');
-                        player.removeMark('zshy_SGNjieying_Mark', num);
-                        var targets = result.targets.sortBySeat();
-                        player.logSkill('zshy_SGNjieying', targets);
-                        for (var i of targets) {
-                            i.addMark('zshy_SGNjieying_Mark', num);
-                        }
+                async content(event, trigger, player) {
+                    const gift = await player.chooseTarget(get.prompt('zshy_SGNjieying'), '令一名其他角色获得你所有的「营」',
+                        (card, player, target) => target !== player)
+                        .set('ai', target => get.attitude(player, target)).forResult();
+                    const recipient = gift.targets?.[0];
+                    if (!gift.bool || !recipient?.isIn()) return;
+                    const num = player.countMark('zshy_SGNjieying_Mark');
+                    player.removeMark('zshy_SGNjieying_Mark', num);
+                    if (num > 0) {
+                        recipient.addSkill('zshy_SGNjieying_Mark');
+                        recipient.addMark('zshy_SGNjieying_Mark', num);
                     }
-                    else return;
-                    'step 2'
-                    var str = '令任意名有「营」的其他角色弃置所有「营」和所有牌';
-                    player.chooseTarget(get.prompt('zshy_SGNjieying'), str, [1, Infinity], function (card, player, target) {
-                        return target != player && target.hasMark('zshy_SGNjieying_Mark');
-                    }).ai = function (target) {
-                        return -get.attitude(player, target);
-                    };
-                    'step 3'
-                    if (result.bool) {
-                        var targets = result.targets.sortBySeat();
-                        player.logSkill('zshy_SGNjieying', targets);
-                        for (var i of targets) {
-                            var num = i.countMark('zshy_SGNjieying_Mark');
-                            i.removeMark('zshy_SGNjieying_Mark', num);
-                            i.discard(i.getCards('he'), true);
-                        }
+                    player.logSkill('zshy_SGNjieying', recipient);
+                    const result = await player.chooseTarget(get.prompt('zshy_SGNjieying'), '令任意名有「营」的其他角色弃置所有「营」、所有手牌和装备区的牌',
+                        [1, Infinity], (card, player, target) => target !== player && target.hasMark('zshy_SGNjieying_Mark'))
+                        .set('ai', target => -get.attitude(player, target)).forResult();
+                    if (!result.bool) return;
+                    for (const target of result.targets.sortBySeat()) {
+                        target.removeMark('zshy_SGNjieying_Mark', target.countMark('zshy_SGNjieying_Mark'));
+                        const cards = target.getCards('he');
+                        if (cards.length) await target.discard(cards);
                     }
                 },
             },

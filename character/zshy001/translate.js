@@ -218,7 +218,7 @@ const SP系列 = {
     zshy_liangzhu: '良助',
     zshy_liangzhu_info: '一名角色回复1点体力后，你可回复1点体力或摸一张牌，然后你可令其摸两张牌。',
     zshy_fanxiang: '返乡',
-    zshy_fanxiang_info: '觉醒技。当你濒死时，你可增加1点体力上限，回复至1点体力并摸四张牌，失去〖良助〗并获得〖枭姬〗，然后转变势力为吴势力。',
+    zshy_fanxiang_info: "觉醒技。当你濒死时，你增加1点体力上限，回复至1点体力并摸四张牌，失去〖良助〗并获得〖枭姬〗，然后将势力改为吴。",
 
     zshy_AAZZzhangheSP: '墟SP张郃',
     zshy_zhouxuan: '周旋',

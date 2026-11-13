@@ -465,9 +465,7 @@ const 一将成名2011 = {
                 prompt2(event, player) {
                     return '令' + get.translation(event.card) + '对你无效';
                 },
-                check(event, player) {
-                    return get.effect(event.player, event.card, player, event.player) < 0;
-                },
+                check(event, player) { return get.effect(player, event.card, event.player, player) < 0; },
                 content() {
                     game.log(player, '发动了智迟，', trigger.card, '对', trigger.target, '失效');
                     trigger.excluded.push(player);
@@ -3634,7 +3632,6 @@ const 一将成名2013 = {
         },
         content() {
             trigger.directHit.addArray(game.players);
-            trigger.baseDamage = player.countCards('e');
         },
         ai: {
             directHit_ai: true,
@@ -3642,7 +3639,7 @@ const 一将成名2013 = {
                 if (!arg || !arg.card || arg.card.name != 'sha') return false;
             },
         },
-        group: ['zshy_anjian_sha'],
+        group: ['zshy_anjian_sha', 'zshy_anjian_damage'],
         subSkill: {
             sha: {
                 audio: 'zshy_anjian',
@@ -3650,7 +3647,8 @@ const 一将成名2013 = {
                     global: 'useCardAfter',
                 },
                 filter(event, player) {
-                    return player.countCards('h') > 0 && event.player != player && get.name(event.card) == 'sha';
+                    return event.player !== player && event.player.isIn() && get.name(event.card) === 'sha' &&
+                        player.canUse({ name: 'sha', nature: 'stab', isCard: true }, event.player, false, false);
                 },
                 prompt2(event, player) {
                     return '视为对' + get.translation(event.player) + '使用一张无视距离且不限次数的刺【杀】';
@@ -3659,8 +3657,18 @@ const 一将成名2013 = {
                     return get.effect(event.player, event.card, player, player) > 0;
                 },
                 async content(event, trigger, player) {
-                    player.useCard({ name: 'sha', nature: 'stab', isCard: true }, trigger.player, false);
+                    const card = { name: 'sha', nature: 'stab', isCard: true };
+                    if (trigger.player.isIn() && player.canUse(card, trigger.player, false, false)) await player.useCard(card, trigger.player, false);
                 },
+            },
+
+            damage: {
+                trigger: { source: 'damageBegin4' },
+                forced: true,
+                lastDo: true,
+                priority: -Infinity,
+                filter(event, player) { return event.card && get.name(event.card) === 'sha' && player.countCards('e') > 0; },
+                content() { trigger.num = player.countCards('e'); },
             },
         },
     },
@@ -6790,7 +6798,10 @@ const 原创之魂2016 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         enable: 'phaseUse',
         filterTarget(card, player, target) {
-            return player != target && target.countCards('he') > 0 && !target.hasSkill('zshy_duliang_After');
+            if (target === player || target.countGainableCards(player, 'he') === 0) return false;
+            const phase = _status.event.getParent('phaseUse');
+            return !player.getHistory('useSkill', evt => evt.skill === 'zshy_duliang' &&
+                evt.event?.getParent('phaseUse') === phase && evt.targets?.includes(target)).length;
         },
         check() {
             return true;
@@ -6799,9 +6810,10 @@ const 原创之魂2016 = {
             const target = event.targets[0];
             await player.gainPlayerCard(target, 'he', true);
             await player.recover();
-            target.addTempSkill('zshy_duliang_draw', { player: 'phaseAfter' });
-            target.addMark('zshy_duliang_draw', 1, false);
-            target.addTempSkill('zshy_duliang_After', { global: 'phaseAfter' });
+            if (!target.isIn()) return;
+            if (!target.storage.zshy_duliang_draw) target.storage.zshy_duliang_draw = [];
+            target.storage.zshy_duliang_draw.push((target.phaseNumber || 0) + 1);
+            target.addSkill('zshy_duliang_draw');
         },
         ai: {
             order: 9,
@@ -6812,24 +6824,25 @@ const 原创之魂2016 = {
         },
         subSkill: {
             draw: {
-                trigger: {
-                    player: 'phaseDrawBegin',
-                },
-                mark: true,
+                trigger: { player: ['phaseDrawBegin2', 'phaseAfter'] },
                 forced: true,
-                onremove: true,
                 charlotte: true,
-                intro: {
-                    content: '下回合的摸牌阶段少摸2张牌',
+                mark: true,
+                onremove: true,
+                intro: { content: '下一个回合的摸牌阶段，每次受到〖督粮〗影响少摸两张牌' },
+                filter(event, player, name) {
+                    const pending = player.getStorage('zshy_duliang_draw');
+                    if (name === 'phaseAfter') return pending.some(turn => turn <= player.phaseNumber);
+                    return !event.numFixed && event.getParent('phase')?.player === player && pending.includes(player.phaseNumber);
                 },
                 content() {
-                    trigger.num -= 2;
+                    if (event.triggername === 'phaseAfter') {
+                        player.storage.zshy_duliang_draw = player.getStorage('zshy_duliang_draw').filter(turn => turn > player.phaseNumber);
+                        if (!player.storage.zshy_duliang_draw.length) player.removeSkill('zshy_duliang_draw');
+                    } else trigger.num = Math.max(0, trigger.num - 2 * player.getStorage('zshy_duliang_draw').filter(turn => turn === player.phaseNumber).length);
                 },
             },
-            After: {
-                charlotte: true,
-                forced: true,
-            },
+
         },
     },
 
@@ -7259,9 +7272,9 @@ const 原创之魂2016 = {
 
     zshy_taoluan: {//滔乱
         audio: 'ext:诸神寰宇/audio/character:2',
-        enable: 'chooseToUse',
+        enable: ['chooseToUse', 'chooseToRespond'],
         hiddenCard(player, name) {
-            return player.countCards('hes') > 0 && lib.inpile.includes(name);
+            return player.hp > 0 && player.countCards('hes') > 0 && lib.inpile.includes(name) && ['basic', 'trick'].includes(get.type(name));
         },
         filter(event, player) {
             if ((game.countPlayer(function (current) {
@@ -7294,7 +7307,9 @@ const 原创之魂2016 = {
                 return ui.create.dialog('滔乱', [list, 'vcard']);
             },
             filter(button, player) {
-                return _status.event.getParent().filterCard({ name: button.link[2] }, player, _status.event.getParent());
+                const event = _status.event.getParent();
+                const card = { name: button.link[2], nature: button.link[3], isCard: true };
+                return event.filterCard(card, player, event);
             },
             check(button) {
                 var player = _status.event.player;
@@ -7314,20 +7329,15 @@ const 原创之魂2016 = {
                     viewAs: { name: links[0][2], nature: links[0][3] },
                 };
             },
-            prompt(links, player) {
-                return '将一张牌当做' + (get.translation(links[0][3]) || '') + get.translation(links[0][2]) + '使用';
-            },
+            prompt(links, player) { return '将一张牌当作' + (get.translation(links[0][3]) || '') + get.translation(links[0][2]) + '使用或打出'; },
         },
         ai: {
             save: true,
             respondSha: true,
             respondShan: true,
             skillTagFilter(player, tag, arg) {
-                if (!player.countCards('hes') || (!game.hasPlayer(current => current != player && !current.hasSkill('zshy_taoluan_refuse')) && player.hp < 2)) return false;
-                if (tag == 'respondSha' || tag == 'respondShan') {
-                    if (arg == 'respond') return false;
-                    return true;
-                }
+                if (player.hp < 1 || !player.countCards('hes') || !game.hasPlayer(current => current !== player)) return false;
+                if (!game.hasPlayer(current => current !== player && !current.hasSkill('zshy_taoluan_refuse')) && player.hp < 2) return false;
                 return true;
             },
             order: 9,
@@ -7353,56 +7363,31 @@ const 原创之魂2016 = {
         subSkill: {
             after: {
                 charlotte: true,
-                trigger: { player: 'useCardAfter' },
+                trigger: { player: ['useCardAfter', 'respondAfter'] },
                 sourceSkill: 'zshy_taoluan',
-                filter(event, player) {
-                    if (!game.hasPlayer(current => current != player)) return false;
-                    return event.skill == 'zshy_taoluan_backup';
-                },
+                filter(event, player) { return event.skill === 'zshy_taoluan_backup'; },
                 forced: true,
                 popup: false,
-                content() {
-                    'step 0'
-                    if (game.hasPlayer(current => current != player && !current.hasSkill('zshy_taoluan_refuse'))) {
-                        player.chooseTarget(function (card, player, target) {
-                            return target != player && !target.hasSkill('zshy_taoluan_refuse');
-                        }, '滔乱<br><br><div class="text center">令一名其他角色选择一项：（未选择则你失去1点体力）①交给你一张与你以此法使用的牌类别不同的牌；②其失去1点体力且本回合〖滔乱〗无法再次选择其为此选择目标。'
-                        ).set('ai', function (target) {
-                            var player = _status.event.player;
-                            if (player.countCards('hes') > 3) return get.attitude(player, target) < 0 && target.countCards('he')
-                            if (get.attitude(player, target) > 0) {
-                                if (get.attitude(target, player) > 0) {
-                                    return target.countCards('he');
-                                }
-                                return target.countCards('he') / 2;
-                            }
-                            return get.attitude(player, target) < 0 && target.countCards('he');
-                        });
-                    } else player.loseHp(), event.finish();
-                    'step 1'
-                    if (result.targets) {
-                        var target = result.targets[0];
-                        event.target = target;
-                        player.line(target, 'green');
-                        var type = get.type(trigger.card, 'trick');
-                        if (target.countCards('he') > 0) {
-                            target.chooseCard('滔乱<br><br><div class="text center">交给' + get.translation(player) + '一张不为' + get.translation(type) + '牌的牌，或失去1点体力且本回合〖滔乱〗无法再次选择你为此选择目标', 'he', function (card, player, target) {
-                                return get.type(card, 'trick') != _status.event.cardType;
-                            }).set('cardType', type).set('ai', function (card) {
-                                if (_status.event.att) {
-                                    return 11 - get.value(card);
-                                }
-                                return 0;
-                            }).set('att', get.attitude(target, player) > 0);
-                        } else target.loseHp();
-                    } else player.loseHp(), event.finish();
-                    'step 2'
-                    var target = event.target;
-                    if (result.bool) {
-                        target.give(result.cards, player);
-                    } else {
-                        target.loseHp();
-                        target.addTempSkill('zshy_taoluan_refuse');
+                async content(event, trigger, player) {
+                    const eligible = target => target !== player && !target.hasSkill('zshy_taoluan_refuse');
+                    if (!game.hasPlayer(eligible)) { await player.loseHp(); return; }
+                    const result = await player.chooseTarget('滔乱：令一名其他角色交给你不同类别的一张牌，或失去1点体力；取消则你失去1点体力',
+                        (card, player, target) => eligible(target))
+                        .set('ai', target => get.attitude(player, target) > 0 ? target.countCards('he') : 1 - target.hp).forResult();
+                    const target = result.targets?.[0];
+                    if (!result.bool || !target?.isIn()) { await player.loseHp(); return; }
+                    player.line(target, 'green');
+                    const type = get.type2(trigger.card);
+                    let payment;
+                    if (target.hasCard(card => get.type2(card) !== type, 'he')) {
+                        payment = await target.chooseCard('he', '滔乱：交给' + get.translation(player) + '一张不同类别的牌，或取消并失去1点体力',
+                            card => get.type2(card) !== type)
+                            .set('ai', card => (get.attitude(target, player) > 0 || target.hp <= 1) ? 10 - get.value(card, target) : 0).forResult();
+                    }
+                    if (payment?.bool && payment.cards?.length) await target.give(payment.cards, player);
+                    else {
+                        target.addTempSkill('zshy_taoluan_refuse', { global: 'phaseAfter' });
+                        await target.loseHp();
                     }
                 },
             },
@@ -7557,37 +7542,24 @@ const 原创之魂2017 = {
             global: 'phaseJieshuBegin',
         },
         direct: true,
-        content() {
-            'step 0'
-            player.chooseTarget(get.prompt('zshy_daiyan'), '令一名角色摸一张牌', function (card, player, target) {
-                return true;
-            }).set('ai', function (target) {
-                var player = _status.event.player, att = get.attitude(player, target);
-                if (att > 0) return get.effect(target, { name: 'draw' }, player, player);
-                return 0;
-            });
-            'step 1'
-            if (result.bool) {
-                var target = result.targets[0];
-                player.logSkill('zshy_daiyan', target);
-                var cardx = get.cardPile(function (card) {
-                    return true;
-                });
-                if (cardx) {
-                    target.gain(cardx, 'gain2');
-                    if (get.color(cardx) == 'red') {
-                        target.recover()
-                    } else target.draw();
-                    if (get.suit(cardx) == 'heart' || get.suit(cardx) == 'spade') player.addMark('zshy_fumian', 1);;
-                };
-            };
+        async content(event, trigger, player) {
+            const result = await player.chooseTarget(get.prompt('zshy_daiyan'), '令一名角色从牌堆中随机获得一张牌',
+                () => true).set('ai', target => get.effect(target, { name: 'draw' }, player, player)).forResult();
+            const target = result.targets?.[0];
+            if (!result.bool || !target?.isIn()) return;
+            player.logSkill('zshy_daiyan', target);
+            const card = get.cardPile(true, 'cardPile', 'random');
+            if (!card) return;
+            const color = get.color(card), suit = get.suit(card);
+            await target.gain(card, 'gain2');
+            if (color === 'red') await target.recover();
+            else if (color === 'black') await target.draw();
+            if (suit === 'heart') player.addMark('zshy_fumian', 1);
         },
         group: ['zshy_daiyan_remove'],
         subSkill: {
             remove: {
-                trigger: {
-                    player: 'phaseEnd',
-                },
+                trigger: { player: 'phaseAfter' },
                 charlotte: true,
                 forced: true,
                 filter(event, player) {

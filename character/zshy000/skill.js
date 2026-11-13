@@ -1089,15 +1089,8 @@ const 光阴长河 = {
         charlotte: true,
         forced: true,
         fixed: true,
-        trigger: {
-            player: ['damageAfter'],
-            source: ['damageAfter'],
-            global: ['phaseZhunbeiBegin'],
-        },
-        filter(event, player, name) {
-            if (name == 'phaseZhunbeiBegin') return true;
-            return (event.num || 0) > 0;
-        },
+        trigger: { player: ['damageAfter'], source: ['damageAfter'], global: ['phaseBegin'] },
+        filter(event, player, name) { return name === 'phaseBegin' || (event.num || 0) > 0; },
         getIndex(event, player) {
             return event.num || 1;
         },
@@ -1842,10 +1835,7 @@ const wxgySkill = {
         init(player, skill) {
             if (!player.storage[skill]) player.storage[skill] = {};
         },
-        trigger: {
-            player: ['damageEnd'],
-            global: ['phaseBefore', 'phaseZhunbeiBegin', 'roundEnd'],
-        },
+        trigger: { player: ['damageEnd'], global: ['phaseBefore', 'roundEnd'] },
         filter(event, player, name) {
             if (name === 'phaseBefore') return player.name === 'zshy_WXGYHun' && game.phaseNumber === 0 && !(player.storage.zshy_H && player.storage.zshy_H.initialized);
             const storage = player.storage.zshy_H;
@@ -1855,54 +1845,11 @@ const wxgySkill = {
         },
         async content(event, trigger, player) {
             const skill = lib.skill.zshy_H;
-            const name = event.triggername;
-            if (name === 'phaseBefore') {
-                await skill.initHuanhun(player);
-            }
-            else if (name === 'damageEnd') {
-                await skill.gainSouls(player, trigger.num || 1);
-            }
-            else if (name === 'roundEnd') {
+            if (event.triggername === 'phaseBefore') await skill.initHuanhun(player);
+            else if (event.triggername === 'damageEnd') await skill.gainSouls(player, trigger.num || 1);
+            else if (event.triggername === 'roundEnd') {
                 await player.gainMaxHp(1);
                 await player.recover(1);
-            }
-            else if (name === 'phaseZhunbeiBegin') {
-                const storage = player.storage.zshy_H;
-                const { control } = await player.chooseControl('替换「魂」', '重铸「魂」', '取消')
-                    .set('prompt', '唤魂：请选择操作。替换「魂」：调整你的势力、性别并获得其技能；重铸「魂」：弃置「魂」并换取新的同名武将牌')
-                    .set('ai', () => {
-                        const st = player.storage.zshy_H;
-                        if (!st) return '取消';
-                        const curRank = st.current ? lib.skill.zshy_H.soulRank(st.current, 'out') : -1;
-                        const best = lib.skill.zshy_H.getBestSoul(player, 'out');
-                        if (best && best.rank > curRank + 0.5) return '替换「魂」';
-                        const pool = lib.skill.zshy_H.sameNameCharacters(st.avatar || st.basename);
-                        const unowned = pool.filter(id => !st.souls.includes(id));
-                        const weak = st.souls.some(id => id !== st.current && lib.skill.zshy_H.soulRank(id, 'out') < curRank);
-                        if (weak && unowned.length) return '重铸「魂」';
-                        return '取消';
-                    })
-                    .forResult();
-                if (control === '取消' || !control) return;
-                if (control === '替换「魂」') {
-                    await skill.chooseSoulToApply(player);
-                    return;
-                }
-                const candidates = storage.souls.filter(id => id !== storage.current); // 学界左慈：当前展示的魂不能重铸
-                const max = Math.min(game.roundNumber, candidates.length);
-                if (max <= 0) return;
-                const links = await skill.chooseSoul(player, candidates, '唤魂：请选择要重铸的「魂」（本次至多 ' + max + ' 张）', 1, max);
-                if (!links.length) return;
-                for (const id of links) {
-                    storage.souls.remove(id);
-                    if (storage.current === id) {
-                        storage.current = null;
-                        storage.skills = [];
-                        if (player.removeAdditionalSkills) await player.removeAdditionalSkills('zshy_H');
-                    }
-                }
-                skill.loseSouls(player, links);
-                await skill.gainSouls(player, links.length);
             }
         },
         // 化身式：把「魂」作为角色牌展示在标记里
@@ -2160,7 +2107,8 @@ const wxgySkill = {
             if (Number.isFinite(player.maxHp)) bonus = Math.max(0, player.maxHp - BASE_MAXHP);
             else if (player.isZhu) bonus = 1;
             player.maxHp = maxHp + bonus;
-            player.hp = player.maxHp;
+            const hp = data.hp ?? character.hp ?? maxHp;
+            player.hp = Math.min(player.maxHp, hp + bonus);
             if (character[0]) game.broadcastAll(function (p, sex) { p.sex = sex; }, player, character[0]);
             if (character[1]) await player.changeGroup(character[1]);
             player.update();
@@ -2176,6 +2124,60 @@ const wxgySkill = {
             lib.skill.zshy_H.drawSouls(player, storage.souls.slice());
             lib.skill.zshy_H.updateMark(player);
             await lib.skill.zshy_H.chooseSoulToApply(player);
+        },
+
+        async prepareSouls(event, trigger, player) {
+            const skill = lib.skill.zshy_H;
+            const storage = player.storage.zshy_H;
+            const { control } = await player.chooseControl('替换「魂」', '重铸「魂」', '取消')
+                .set('prompt', '唤魂·准备阶段：请选择操作。替换「魂」：调整你的势力、性别并获得其技能；重铸「魂」：弃置「魂」并换取新的同名武将牌')
+                .set('ai', () => {
+                    const st = player.storage.zshy_H;
+                    if (!st) return '取消';
+                    const curRank = st.current ? lib.skill.zshy_H.soulRank(st.current, 'out') : -1;
+                    const best = lib.skill.zshy_H.getBestSoul(player, 'out');
+                    if (best && best.rank > curRank + 0.5) return '替换「魂」';
+                    const pool = lib.skill.zshy_H.sameNameCharacters(st.avatar || st.basename);
+                    const unowned = pool.filter(id => !st.souls.includes(id));
+                    const weak = st.souls.some(id => id !== st.current && lib.skill.zshy_H.soulRank(id, 'out') < curRank);
+                    if (weak && unowned.length) return '重铸「魂」';
+                    return '取消';
+                })
+                .forResult();
+            if (control === '取消' || !control) return;
+            if (control === '替换「魂」') {
+                await skill.chooseSoulToApply(player);
+                return;
+            }
+            const candidates = storage.souls.filter(id => id !== storage.current); // 学界左慈：当前展示的魂不能重铸
+            const max = Math.min(game.roundNumber, candidates.length);
+            if (max <= 0) return;
+            const links = await skill.chooseSoul(player, candidates, '唤魂：请选择要重铸的「魂」（本次至多 ' + max + ' 张）', 1, max);
+            if (!links.length) return;
+            for (const id of links) {
+                storage.souls.remove(id);
+                if (storage.current === id) {
+                    storage.current = null;
+                    storage.skills = [];
+                    if (player.removeAdditionalSkills) await player.removeAdditionalSkills('zshy_H');
+                }
+            }
+            skill.loseSouls(player, links);
+            await skill.gainSouls(player, links.length);
+
+        },
+
+        group: ['zshy_H_prepare'],
+
+        subSkill: {
+            prepare: {
+                trigger: { global: 'phaseZhunbei' },
+                forced: true,
+                popup: false,
+                charlotte: true,
+                filter(event, player) { return event.name === 'phaseZhunbei' && !!player.storage.zshy_H?.initialized; },
+                async content(event, trigger, player) { await lib.skill.zshy_H.prepareSouls(event, trigger, player); },
+            },
         },
     },
 };
