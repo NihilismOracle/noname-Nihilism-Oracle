@@ -52,11 +52,13 @@ jobs:
               echo "该版本已发布；请更新版本号后再发布，避免覆盖已有安装包。" >&2
               exit 1
             fi
-            gh release edit "$tag" --title "$RELEASE_NAME" --notes-file "$NOTES"
+            gh release edit "$tag" --target "$GITHUB_SHA" --title "$RELEASE_NAME" --notes-file "$NOTES"
           else
             gh release create "$tag" --target "$GITHUB_SHA" --title "$RELEASE_NAME" --notes-file "$NOTES" --draft
           fi
           gh release upload "$tag" "$ARCHIVE#${RELEASE_NAME}.zip" "$CHECKSUM#${RELEASE_NAME}.zip.sha256" --clobber
-          gh api "repos/$GH_REPO/releases/tags/$tag" > release-assets.json
+          # Draft releases must be queried by their API URL, not the public tag endpoint.
+          release_api_url="$(gh release view "$tag" --json apiUrl --jq .apiUrl)"
+          gh api "$release_api_url" > release-assets.json
           python3 scripts/build-release.py --verify-assets release-assets.json
           gh release edit "$tag" --draft=false --latest
