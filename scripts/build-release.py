@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -59,6 +60,22 @@ def build(output_dir: Path) -> dict:
     checksum = output_dir / f"{name}.zip.sha256"
     checksum.write_text(f"{digest}  {archive.name}\n", encoding="utf-8")
 
+    # GitHub strips CJK characters from asset filenames, including on rename.
+    # Keep the requested local name and use a stable ASCII upload name + CJK label.
+    upload_dir = output_dir / "upload"
+    upload_dir.mkdir(exist_ok=True)
+    upload_archive = upload_dir / f"ZhuShenHuanYu{version}.zip"
+    shutil.copyfile(archive, upload_archive)
+    upload_checksum = upload_dir / f"{upload_archive.name}.sha256"
+    upload_checksum.write_text(f"{digest}  {upload_archive.name}\n", encoding="utf-8")
+    manifest = {"tag": f"v{version}", "assets": []}
+    for file, label in ((upload_archive, archive.name), (upload_checksum, checksum.name)):
+        with file.open("rb") as stream:
+            asset_digest = hashlib.file_digest(stream, "sha256").hexdigest()
+        manifest["assets"].append({"name": file.name, "label": label, "size": file.stat().st_size,
+                                   "digest": f"sha256:{asset_digest}", "state": "uploaded"})
+    (output_dir / "release-manifest.json").write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
+
     announcement = (ROOT / "更新公告.md").read_text(encoding="utf-8-sig")
     headings = list(re.finditer(r"^\d{8}（([^，]+)，适配无名杀 ([\d.]+)）\s*$", announcement, re.M))
     if not headings or headings[-1].group(1) != version:
@@ -66,23 +83,44 @@ def build(output_dir: Path) -> dict:
     latest = announcement[headings[-1].start():].strip()
     notes = output_dir / "release-notes.md"
     notes.write_text(
-        f"下载 **{archive.name}** 安装包。ZIP 根目录直接包含 `info.json`、`extension.js`、`packages.js` 和资源目录，没有仓库名外层文件夹。\n\n"
+        f"选择显示名称为 **{archive.name}** 的安装包。GitHub 会过滤附件文件名中的中文，实际下载文件名为 **{upload_archive.name}**，下载后可改为 **{archive.name}**。\n\n"
+        "ZIP 根目录直接包含 `info.json`、`extension.js`、`packages.js` 和资源目录，没有仓库名外层文件夹。\n\n"
         "支持扩展 ZIP 导入的客户端可直接导入；手动安装时，将压缩包内容解压到本体的 `extension/诸神寰宇/`。\n\n"
         "GitHub 自动附带的 **Source code (zip)** 是源码归档，请选择上面命名的安装包。\n\n"
         f"{latest}\n\nSHA-256：`{digest}`\n",
         encoding="utf-8",
     )
     result = {"version": version, "name": name, "archive": str(archive), "checksum": str(checksum),
+              "upload_archive": str(upload_archive), "upload_checksum": str(upload_checksum),
               "notes": str(notes), "files": len(paths), "bytes": archive.stat().st_size, "sha256": digest}
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-            for key in ("version", "name", "archive", "checksum", "notes"):
+            for key in ("version", "name", "archive", "checksum", "upload_archive", "upload_checksum", "notes"):
                 output.write(f"{key}={result[key]}\n")
     return result
+
+
+def verify_assets(output_dir: Path, release_file: Path) -> dict:
+    """Validate the actual uploaded names, labels and bytes before publishing."""
+    manifest = json.loads((output_dir / "release-manifest.json").read_text(encoding="utf-8"))
+    release = json.loads(release_file.read_text(encoding="utf-8-sig"))
+    if release["tag_name"] != manifest["tag"]:
+        raise ValueError("Release 标签与构建版本不一致")
+    expected = {asset["name"]: asset for asset in manifest["assets"]}
+    actual = {asset["name"]: asset for asset in release["assets"]}
+    if len(release["assets"]) != len(expected) or set(actual) != set(expected):
+        raise ValueError("GitHub 附件名称或数量与构建结果不一致")
+    for name, asset in expected.items():
+        for key, value in asset.items():
+            if actual[name].get(key) != value:
+                raise ValueError(f"GitHub 附件校验失败：{name} / {key}")
+    return {"tag": manifest["tag"], "verified_assets": list(expected)}
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, default=ROOT / "dist")
+    parser.add_argument("--verify-assets", type=Path, help="Check GitHub release JSON against the build manifest")
     args = parser.parse_args()
-    print(json.dumps(build(args.output_dir), ensure_ascii=False, indent=2))
+    result = verify_assets(args.output_dir, args.verify_assets) if args.verify_assets else build(args.output_dir)
+    print(json.dumps(result, ensure_ascii=False, indent=2))

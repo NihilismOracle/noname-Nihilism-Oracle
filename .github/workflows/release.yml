@@ -36,8 +36,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
           VERSION: ${{ steps.build.outputs.version }}
           RELEASE_NAME: ${{ steps.build.outputs.name }}
-          ARCHIVE: ${{ steps.build.outputs.archive }}
-          CHECKSUM: ${{ steps.build.outputs.checksum }}
+          ARCHIVE: ${{ steps.build.outputs.upload_archive }}
+          CHECKSUM: ${{ steps.build.outputs.upload_checksum }}
           NOTES: ${{ steps.build.outputs.notes }}
         shell: bash
         run: |
@@ -56,5 +56,7 @@ jobs:
           else
             gh release create "$tag" --target "$GITHUB_SHA" --title "$RELEASE_NAME" --notes-file "$NOTES" --draft
           fi
-          gh release upload "$tag" "$ARCHIVE" "$CHECKSUM" --clobber
+          gh release upload "$tag" "$ARCHIVE#${RELEASE_NAME}.zip" "$CHECKSUM#${RELEASE_NAME}.zip.sha256" --clobber
+          gh api "repos/$GH_REPO/releases/tags/$tag" > release-assets.json
+          python3 scripts/build-release.py --verify-assets release-assets.json
           gh release edit "$tag" --draft=false --latest
