@@ -385,32 +385,45 @@ const 文德武备理 = {
         preHidden: true,
         filter(event, player) {
             if (!Array.isArray(event.respondTo) || event.respondTo[0] == event.player || ![event.respondTo[0], event.player].includes(player)) return false;
-            let target = lib.skill.zshy_caiwang.logTarget(event, player);
+            if (get.color(event.card) != get.color(event.respondTo[1])) return true;
+            const target = lib.skill.zshy_caiwang.logTarget(event, player);
             return target[player.getStorage('zshy_naxiang_sub').includes(target) ? 'countGainableCards' : 'countDiscardableCards'](player, 'he') > 0;
         },
         logTarget(event, player) {
             return player == event.respondTo[0] ? event.player : event.respondTo[0];
         },
         prompt2(event, player) {
-            var target = lib.skill.zshy_caiwang.logTarget(event, player);
-            return (player.getStorage('zshy_naxiang_sub').includes(target) ? '获得' : '弃置') + '该角色的一张牌';
+            if (get.color(event.card) != get.color(event.respondTo[1])) return '回复1点体力或摸一张牌';
+            const target = lib.skill.zshy_caiwang.logTarget(event, player);
+            return (player.getStorage('zshy_naxiang_sub').includes(target) ? '获得' : '弃置') + '该角色的一张手牌或装备牌';
         },
         check(event, player) {
-            return get.attitude(player, lib.skill.zshy_caiwang.logTarget(event, player)) <= 0;
+            if (get.color(event.card) != get.color(event.respondTo[1])) return true;
+            const target = lib.skill.zshy_caiwang.logTarget(event, player);
+            const name = player.getStorage('zshy_naxiang_sub').includes(target) ? 'shunshou_copy2' : 'guohe_copy2';
+            return get.effect(target, { name }, player, player) > 0;
+        },
+        async cost(event, trigger, player) {
+            if (get.color(trigger.card) != get.color(trigger.respondTo[1])) {
+                event.result = { bool: true };
+                return;
+            }
+            const target = lib.skill.zshy_caiwang.logTarget(trigger, player);
+            event.result = await player.chooseBool(get.prompt('zshy_caiwang', target), lib.skill.zshy_caiwang.prompt2(trigger, player))
+                .set('ai', () => lib.skill.zshy_caiwang.check(trigger, player))
+                .forResult();
         },
         popup: false,
-        content(event) {
-            'step 0';
-            if (player != game.me && !player.isOnline()) game.delayx();
-            'step 1';
-            var target = lib.skill.zshy_caiwang.logTarget(trigger, player);
-            player.logSkill(event.name, target);
-            let color = get.color(trigger.card), number = get.number(trigger.card);
-            if ((color == 'none' || get.color(trigger.respondTo[1]) != color)) {
-                player[player.getStorage('zshy_naxiang_sub').includes(target) ? 'gainPlayerCard' : 'discardPlayerCard'](target, 'he', true);
-            }
-            else {
-                player.chooseDrawRecover(true);
+        async content(event, trigger, player) {
+            const target = lib.skill.zshy_caiwang.logTarget(trigger, player);
+            player.logSkill('zshy_caiwang', target);
+            if (get.color(trigger.card) == get.color(trigger.respondTo[1])) {
+                const gain = player.getStorage('zshy_naxiang_sub').includes(target);
+                if (target[gain ? 'countGainableCards' : 'countDiscardableCards'](player, 'he') > 0) {
+                    await player[gain ? 'gainPlayerCard' : 'discardPlayerCard'](target, 'he', true);
+                }
+            } else {
+                await player.chooseDrawRecover(true);
             }
         },
         group: ['zshy_caiwang_hand', 'zshy_caiwang_equip', 'zshy_caiwang_judge'],

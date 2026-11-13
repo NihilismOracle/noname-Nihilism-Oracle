@@ -7558,18 +7558,14 @@ const 动如雷震 = {
                 return num + game.countPlayer();
             },
         },
-        filter(event, player) {
-            return !event.numFixed;
-        },
         async content(event, trigger, player) {
-            delete player.storage.zshy_yongsi_sha;
             const num = game.countPlayer();
             await player.draw(num);
             const canRecast = player.getCards('h', card => player.canRecast(card));
             if (!canRecast.length) return;
             const max = Math.min(num, canRecast.length);
             const result = await player
-                .chooseCard('庸肆：你可以重铸至多' + max + '张牌', 'h', [0, max])
+                .chooseCard('庸肆：你可以重铸至多' + max + '张手牌', 'h', [0, max])
                 .set('filterCard', (card, player) => player.canRecast(card))
                 .set('ai', card => {
                     if (card.name == 'sha') return 5;
@@ -7579,17 +7575,19 @@ const 动如雷震 = {
             if (!result.bool || !result.cards || !result.cards.length) return;
             const cards = result.cards.slice();
             const damageCount = cards.filter(card => get.tag(card, 'damage') > 0).length;
-            if (damageCount) {
-                player.storage.zshy_yongsi_sha = damageCount;
-                player.addTempSkill('zshy_yongsi_sha', { player: 'phaseUseEnd' });
-            }
             await player.recast(cards);
+            if (damageCount) {
+                player.addTempSkill('zshy_yongsi_sha', { global: ['phaseAfter', 'phaseBeforeStart'] });
+                player.storage.zshy_yongsi_sha = (player.storage.zshy_yongsi_sha || 0) + damageCount;
+            }
         },
     },
-    zshy_yongsi_sha: {//庸肆：重铸【杀】后的本回合加成
+    zshy_yongsi_sha: {//庸肆：重铸伤害类牌后的本回合加成
+        charlotte: true,
+        onremove: true,
         mod: {
-            attackRange() {
-                return Infinity;
+            targetInRange(card) {
+                if (get.name(card) == 'sha') return true;
             },
             cardUsable(card, player, num) {
                 if (card.name == 'sha') return num + (player.storage.zshy_yongsi_sha || 0);
@@ -7766,49 +7764,39 @@ const 动如雷震 = {
 
     zshy_wanglie: {//往烈
         audio: 'ext:诸神寰宇/audio/character:2',
-        frequent: true,
         trigger: {
-            player: 'useCard',
+            player: 'useCardToPlayered',
         },
         forced: true,
         filter(event, player) {
-            return player.isPhaseUsing() && (get.name(event.card) == 'sha' || get.tag(event.card, 'damage'));
+            return event.isFirstTarget && get.tag(event.card, 'damage');
         },
         preHidden: true,
-        check(event, player) {
-            return true;
-        },
         prompt2(event) {
             return '令' + get.translation(event.card) + '不能被响应且额外结算';
         },
         async content(event, trigger, player) {
-            trigger.nowuxie = true;
-            if (!Array.isArray(trigger.directHit)) trigger.directHit = [];
-            trigger.directHit.addArray(trigger.targets.slice());
-            if (!player.hasSkill('zshy_wanglie_used')) {
-                game.log(trigger.card, '无距离限制');
-                player.addTempSkill('zshy_wanglie_used');
+            const useEvent = trigger.getParent();
+            useEvent.nowuxie = true;
+            useEvent.directHit.addArray(game.players);
+            let maxDamagedHp = 0;
+            for (const target of useEvent.targets) {
+                maxDamagedHp = Math.max(maxDamagedHp, target.getDamagedHp());
             }
-            let num = 0;
-            for (const target of trigger.targets) {
-                num = Math.max(num, player.getDamagedHp() + target.getDamagedHp());
-            }
-            num += 1;
-            if (num > 0) {
-                player.markAuto('zshy_wanglie', [get.name(trigger.card)]);
-                trigger.effectCount += num;
-            }
+            useEvent.effectCount += player.getDamagedHp() + maxDamagedHp + 1;
         },
         mod: {
-            targetInRange(card, player, target, now) {
-                if (card.name == 'sha' || get.tag(card, 'damage') && !player.hasSkill('zshy_wanglie_used')) return true;
+            targetInRange(card, player) {
+                if (!get.tag(card, 'damage')) return;
+                const first = player.getHistory('useCard', evt => get.tag(evt.card, 'damage'))[0];
+                if (!first || first.card == card) return true;
             },
         },
         ai: {
             presha: true,
             directHit_ai: true,
             skillTagFilter(player, tag, arg) {
-                return true;
+                if (tag == 'directHit_ai') return !!arg && !!arg.card && !!get.tag(arg.card, 'damage');
             },
         },
     },

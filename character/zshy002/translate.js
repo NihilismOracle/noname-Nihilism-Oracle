@@ -384,7 +384,7 @@ const 动如雷震 = {
     zshy_AAZZyuanshuSHZL: '墟SP袁术',
     '#zshy_AAZZxxxxxxxJMGX:die': 'XXXX',
     zshy_yongsi: '庸肆',
-    zshy_yongsi_info: '锁定技。①你的手牌上限+X（X为场上角色数）。②你的准备阶段开始时，你摸X张，然后你可以重铸至多X张牌；若你以此法重铸了伤害类牌，本回合你使用【杀】无距离限制且次数+Y（Y为你以此法重铸的伤害类牌数）。',
+    zshy_yongsi_info: '锁定技。①你的手牌上限+X（X为场上角色数）。②你的准备阶段开始时，你摸X张牌，然后可以重铸至多X张手牌。若你以此法重铸了伤害类牌，本回合你使用【杀】无距离限制，且使用次数上限+Y（Y为你以此法重铸的伤害类牌数）。',
     zshy_weidi: '伪帝',
     zshy_weidi_info: '主公技。弃牌阶段开始时，若你的手牌数大于手牌上限，则你可将至多X张手牌分别交给等量的其他角色；若你以此法交给群势力角色牌，其摸一张牌（X为你的手牌数与手牌上限之差）。',
 
@@ -395,7 +395,7 @@ const 动如雷震 = {
     zshy_AAZZchendaoSHZL: '墟陈到',
     '#zshy_AAZZxxxxxxxJMGX:die': 'XXXX',
     zshy_wanglie: '往烈',
-    zshy_wanglie_info: '锁定技。①你使用的第一张伤害牌无距离限制。②你使用伤害牌指定角色时，此牌不能被响应，且额外结算X次（X为你与目标角色已损失体力的最高值之和+1）。',
+    zshy_wanglie_info: '锁定技。①每回合，你使用的第一张伤害牌无距离限制。②当你使用伤害牌指定目标后，此牌不能被响应，且额外结算X次（X为你已损失的体力值与此牌所有目标中已损失体力值的最大值之和，再加1）。',
 
     zshy_AAZZzhugezhanSHZL: '墟诸葛瞻',
     '#zshy_AAZZxxxxxxxJMGX:die': 'XXXX',
