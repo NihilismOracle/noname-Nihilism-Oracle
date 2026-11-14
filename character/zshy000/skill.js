@@ -1,5 +1,6 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
 import { getBaseName, refreshNameLibrary } from '../../extension/name-library.js';
+import { chooseCharacterConfirmed, requireCharacterConfirmation } from '../../extension/characterSelection.js';
 // 运行时牌池缓存与受保护的技能定义分离，避免把规则定义当作可变存储。
 let yicePoolCache = null;
 let huashenPoolCache = null;
@@ -1971,40 +1972,7 @@ const wxgySkill = {
             return lib.skill.zshy_Hhuanhun.allCharacters().filter(cid => lib.skill.zshy_Hhuanhun.cleanName(cid) === base);
         },
         async chooseFromPool(player, pool, prompt) {
-            if (!pool || !pool.length) return null;
-            if (!((player === game.me && !_status.auto) || (player !== game.me && player.isUnderControl(true)))) return pool.randomGet();
-            // 本体自由选将框；临时绕过 lib.characterFilter（否则“烬系/诸神寰宇仅点将”等设置会把扩展武将过滤掉）
-            const savedCharacterFilter = lib.characterFilter;
-            let dialog;
-            try {
-                lib.characterFilter = {};
-                dialog = ui.create.characterDialog(function (id) { return !pool.includes(id); });
-            } finally {
-                lib.characterFilter = savedCharacterFilter;
-            }
-            // 在选将框顶部补当前步骤说明
-            const promptNode = ui.create.div('.caption', '<div style="padding:6px 4px;line-height:1.6;">' + prompt + '</div>');
-            if (dialog.content && dialog.content.firstChild) dialog.content.insertBefore(promptNode, dialog.content.firstChild);
-            else if (dialog.content) dialog.content.appendChild(promptNode);
-            dialog.classList.add('pointerdialog');
-            dialog.style.height = '80%';
-            dialog.style.top = '10%';
-            dialog.style.transform = 'scale(0.92)';
-            dialog.style.transition = 'all 0.3s';
-            ui.window.appendChild(dialog);
-            const chosen = await new Promise(function (resolve) {
-                const onClick = function (event) {
-                    const button = event.target && event.target.closest ? event.target.closest('.button') : null;
-                    if (!button || !button.link) return;
-                    const link = Array.isArray(button.link) ? button.link[0] : button.link;
-                    if (!link || !pool.includes(link)) return;
-                    dialog.removeEventListener('click', onClick, true);
-                    resolve(link);
-                };
-                dialog.addEventListener('click', onClick, true);
-            });
-            dialog.delete();
-            return chosen;
+            return await chooseCharacterConfirmed(player, pool || [], prompt);
         },
         // 化身式评分：一张魂的武将技能里取最高 get.skillRank
         soulRank(id, cond) {
@@ -2030,21 +1998,32 @@ const wxgySkill = {
         // 选「魂」用化身机制：dialog + chooseButton(true)；自由选将只给开局选武将图
         async chooseSoul(player, list, prompt, min, max, discarding = false) {
             if (!list || !list.length) return [];
-            if (!((player === game.me && !_status.auto) || (player !== game.me && player.isUnderControl(true)))) {
+            if (!player.isOnline?.() && !((player === game.me && !_status.auto) || (player !== game.me && player.isUnderControl(true)))) {
                 const count = Math.min(list.length, max || 1);
                 const scored = list.map(id => ({ id: id, rank: lib.skill.zshy_Hhuanhun.soulRank(id, 'out') }));
                 scored.sort((a, b) => discarding ? a.rank - b.rank : b.rank - a.rank);
                 return scored.slice(0, count).map(x => x.id);
             }
-            const dialog = ui.create.dialog(prompt, [list.slice(), 'character']);
-            dialog.videoId = lib.status.videoId++;
-            const result = await player.chooseButton(true)
-                .set('dialog', dialog.videoId)
-                .set('selectButton', [min || 1, max || 1])
-                .set('ai', button => (discarding ? -1 : 1) * lib.skill.zshy_Hhuanhun.soulRank(button.link, 'out'))
-                .forResult();
-            dialog.close();
-            return (result && result.bool && result.links) ? result.links.slice() : [];
+            const videoId = lib.status.videoId++;
+            game.broadcastAll((videoId, prompt, list) => {
+                const dialog = ui.create.dialog(prompt + '（点选后点击“确定”）', [list, 'character'], 'hidden');
+                dialog.videoId = videoId;
+                ui.dialogs.add(dialog);
+            }, videoId, prompt, list.slice());
+            try {
+                const next = player.chooseButton(true)
+                    .set('dialog', videoId)
+                    .set('selectButton', [min ?? 1, max ?? 1])
+                    .set('zshySoulDiscarding', discarding)
+                    .set('ai', button => (get.event().zshySoulDiscarding ? -1 : 1) * lib.skill.zshy_Hhuanhun.soulRank(button.link, 'out'));
+                const result = await requireCharacterConfirmation(next).forResult();
+                return result?.bool && result.links ? result.links.filter(id => list.includes(id)) : [];
+            } finally {
+                game.broadcastAll(videoId => {
+                    const dialog = get.idDialog(videoId);
+                    if (dialog) { dialog.close(); dialog.delete(); ui.dialogs.remove(dialog); }
+                }, videoId);
+            }
         },
         updateName(player, basename) {
             game.broadcastAll(function (hunId, name) {

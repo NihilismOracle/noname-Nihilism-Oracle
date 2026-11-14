@@ -156,7 +156,7 @@ const 远古遗神 = {
                 superCharlotte: true,
                 forceDie: true,
                 forceOut: true,
-                filter(event, player) { return !player.storage.zshyAnjingEntered; },
+                filter(event, player) { return !player.storage.zshyAnjingEntered && !player.storage.zshyAnjingEntering; },
                 async content(event, trigger, player) { await enterAnjing(player); },
             },
         },
@@ -483,9 +483,8 @@ const 远古遗神 = {
         NihilismSkill: true,
         forced: true,
         trigger: { player: 'dieBefore' },
-        filter(event, player) { return !isAnjing(player); },
         async content(event, trigger, player) {
-            trigger.cancel();
+            trigger.cancel(isAnjing(player) ? false : undefined);
             await kuimingEffect(player);
         },
         ai: {

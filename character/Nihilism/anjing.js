@@ -1,10 +1,18 @@
 import { lib, game, get, _status } from '../../../../noname.js';
 import { installSkillProtection } from '../../extension/skillProtection.js';
+import { characterChoicePool, chooseCharacterConfirmed } from '../../extension/characterSelection.js';
 
 export const ANJING = 'Nihilism_AAAAanjing';
-export const ANTianhen = 'zshy_AAAAantianhen';
-const ownSkills = new Set(['zshy_AJshenzun', 'zshy_AJshenzun_enter', 'zshy_AJxuwu', 'zshy_AJjinmie', 'zshy_AJhuanhun', 'zshy_AllSkill', 'zshy_AAAAkuiming', 'zshy_ATHmingying']);
+const ownSkills = new Set(['zshy_AJshenzun', 'zshy_AJshenzun_enter', 'zshy_AJxuwu', 'zshy_AJjinmie', 'zshy_AJhuanhun']);
 const owners = new Set();
+const deputies = new WeakMap();
+const characterSkills = id => lib.character[id]?.skills || lib.character[id]?.[3] || [];
+export const getAnjingDeputy = player => deputies.get(player)?.id || null;
+const expectedPairs = player => [ANJING, deputies.get(player)?.pending || getAnjingDeputy(player)].filter(Boolean);
+function isAnjingSkill(player, skill) {
+    const source = get.sourceSkillFor?.(skill) || skill;
+    return ownSkills.has(source) || characterSkills(getAnjingDeputy(player)).includes(source);
+}
 const installed = new WeakMap();
 const participants = () => [...new Set([...(game.players || []), ...(game.dead || []), ...(game.additionaldead || [])])];
 const currentOwners = () => participants().filter(player => owners.has(player));
@@ -46,7 +54,7 @@ export function prioritizeAnjing(event) {
     const front = [];
     for (const bucket of event.doingList) {
         bucket.todoList = bucket.todoList.filter(item => {
-            if (!isAnjing(item.player) || !ownSkills.has(get.sourceSkillFor?.(item.skill) || item.skill)) return true;
+            if (!isAnjing(item.player) || !isAnjingSkill(item.player, item.skill)) return true;
             item.priority = Infinity;
             front.push(item);
             return false;
@@ -95,6 +103,7 @@ function installRuntime() {
 export function registerAnjing(player) {
     if (!player || (!owners.has(player) && ![player.name, player.name1, player.name2].includes(ANJING))) return;
     owners.add(player);
+    if (!deputies.has(player)) deputies.set(player, { id: player.name2 !== ANJING && lib.character[player.name2] ? player.name2 : null });
     installSkillProtection();
     protectAnjing(player);
     installRuntime();
@@ -103,19 +112,19 @@ export function registerAnjing(player) {
         return original.apply(this, args);
     });
     wrap(player, 'init', original => function (...args) {
-        if (isAnjing(this)) args.splice(0, 2, ANJING, ANTianhen);
+        if (isAnjing(this)) args.splice(0, 2, ...expectedPairs(this));
         const value = original.apply(this, args);
         protectAnjing(this);
         return value;
     });
     wrap(player, 'reinit', original => function (from, to, ...args) {
-        if (isAnjing(this) && to !== (from === this.name2 ? ANTianhen : ANJING)) return this;
+        if (isAnjing(this) && to !== (from === this.name2 ? (deputies.get(this)?.pending || getAnjingDeputy(this)) : ANJING)) return this;
         const value = original.call(this, from, to, ...args);
         protectAnjing(this);
         return value;
     });
     for (const method of ['reinit2', 'changeCharacter']) wrap(player, method, original => function (pairs, ...args) {
-        return original.call(this, isAnjing(this) ? [ANJING, ANTianhen] : pairs, ...args);
+        return original.call(this, isAnjing(this) ? expectedPairs(this) : pairs, ...args);
     });
     wrap(player, 'die', original => function (...args) {
         const event = original.apply(this, args);
@@ -143,15 +152,27 @@ export function registerAnjing(player) {
 export async function restoreAnjing(player) {
     registerAnjing(player);
     protectAnjing(player);
-    if (player.name1 !== ANJING || player.name2 !== ANTianhen) {
-        // reinit2 支持单将变双将，不清空 storage、回合统计或既有牌。
-        player.reinit2([ANJING, ANTianhen]);
+    const pairs = expectedPairs(player);
+    if (player.name1 !== ANJING || player.name2 !== pairs[1]) {
+        // reinit2 只更新武将牌，另行补技能，避免 uninit 清空存储。
+        player.reinit2(pairs);
     }
-    for (const [key, value] of [['name', ANJING], ['name1', ANJING], ['name2', ANTianhen]]) {
-        Object.defineProperty(player, key, { configurable: true, enumerable: true, get() { return value; }, set() {} });
+    for (const key of ['name', 'name1']) {
+        Object.defineProperty(player, key, { configurable: true, enumerable: true, get() { return ANJING; }, set() {} });
     }
-    const skills = [ANJING, ANTianhen].flatMap(name => lib.character[name]?.skills || lib.character[name]?.[3] || []);
-    for (const skill of skills) if (!player.hasSkill(skill, null, null, false)) player.addSkill(skill);
+    Object.defineProperty(player, 'name2', {
+        configurable: true, enumerable: true,
+        get() { return getAnjingDeputy(player) || undefined; },
+        set(value) {
+            const state = deputies.get(player);
+            if (state.pending && value === state.pending) state.id = value;
+        },
+    });
+    const skills = pairs.flatMap(characterSkills);
+    for (const skill of skills) {
+        if (lib.skill[skill]?.zhuSkill && !player.isZhu2()) continue;
+        if (!player.hasSkill(skill, null, null, false)) player.addSkill(skill);
+    }
     if (!player.isDisabledJudge()) await player.disableJudge();
     if (player.isTurnedOver()) await player.turnOver(false);
     if (player.isLinked()) await player.link(false);
@@ -162,6 +183,40 @@ export async function restoreAnjing(player) {
     }
     protectAnjing(player);
     player.update();
+}
+
+export async function chooseAnjingDeputy(player, replacing = false) {
+    const pool = characterChoicePool().filter(id => id !== ANJING && (!replacing || id !== getAnjingDeputy(player)));
+    const id = await chooseCharacterConfirmed(player, pool,
+        replacing ? '〖唤魂〗：你可更换副将，取消则保留当前副将' : '〖神尊〗：请选择一名副将', !replacing);
+    if (!id) return false;
+    await setAnjingDeputy(player, id);
+    return true;
+}
+
+export async function setAnjingDeputy(player, id) {
+    if (!isAnjing(player) || !lib.character[id] || id === ANJING || id === getAnjingDeputy(player)) return;
+    await restoreAnjing(player);
+    const previous = getAnjingDeputy(player);
+    // 先向主客机同步本次合法换将的目标；外部换将仍只能恢复到这个目标。
+    game.broadcastAll((player, id) => game.zshyAnjingRuntime.beginDeputyChange(player, id), player, id);
+    try {
+        player.reinit2([ANJING, id]);
+        const keep = [ANJING, id].flatMap(characterSkills);
+        const remove = characterSkills(previous).filter(skill => !keep.includes(skill));
+        const add = keep.filter(skill => !lib.skill[skill]?.zhuSkill || player.isZhu2());
+        // 正常换将需要卸下旧将的绝恒技；仅在这里调用词条包装前的本体方法，
+        // 不关闭整个保护层，不将“他技移除”放行，且保留本体 changeSkills 与 onremove 清理。
+        const changeSkills = lib.NihilismSkill_changeSkills || player.changeSkills;
+        const removeSkill = lib.NihilismSkill_removeSkill || player.removeSkill;
+        await changeSkills.call(player, add, remove).set('$handle', (current, added, removed) => {
+            for (const skill of removed) removeSkill.call(current, skill, true);
+            if (added.length) current.addSkill(added);
+        });
+    } finally {
+        game.broadcastAll(player => game.zshyAnjingRuntime.endDeputyChange(player), player);
+    }
+    await restoreAnjing(player);
 }
 
 export async function insertAnjingPhase(player) {
@@ -193,16 +248,18 @@ export async function kuimingEffect(player) {
 
 export async function rescueAnjing(trigger, player) {
     if (trigger._zshyAnjingRescued || player._zshyAnjingRestoring) {
-        trigger.cancel();
+        trigger.cancel(false);
         return;
     }
     trigger._zshyAnjingRescued = true;
     trigger.reserveOut = true;
     trigger.noDieAfter = trigger.noDieAfter2 = true;
-    trigger.cancel();
+    // 只取消死亡本体，保留 dieBefore 队列，让当前副将按自己的技能规则结算。
+    trigger.cancel(false);
     player._zshyAnjingRestoring = true;
     try {
         protectAnjing(player);
+        await chooseAnjingDeputy(player, true);
         // 采用十常侍的原生休整状态，但不经过死亡弃牌/杀人奖惩，也不等待下回合。
         await player.rest({ type: 'phase', count: -1 });
         await player.restEnd({ hp: Infinity });
@@ -210,7 +267,19 @@ export async function rescueAnjing(trigger, player) {
         delete player._zshyAnjingRestoring;
     }
     await restoreAnjing(player);
-    await kuimingEffect(player);
+    // 绕过正常触发列表的 die 调用仍为当前副将提供 dieBefore，使用本体代价和过滤。
+    const arranging = get.event()?.getParent('arrangeTrigger');
+    if (!arranging || arranging.name !== 'arrangeTrigger' || arranging.triggername !== 'dieBefore' || arranging._trigger !== trigger) {
+        const skills = game.expandSkills([...characterSkills(getAnjingDeputy(player))]);
+        for (const skill of skills) {
+            const info = lib.skill[skill];
+            if (!info?.trigger || !Object.entries(info.trigger).some(([role, value]) =>
+                ['player', 'global'].includes(role) && (Array.isArray(value) ? value.includes('dieBefore') : value === 'dieBefore'))) continue;
+            if (lib.filter.filterTrigger(trigger, player, 'dieBefore', skill)) {
+                await game.createTrigger('dieBefore', skill, player, trigger);
+            }
+        }
+    }
 }
 
 function identityCamp(player) {
@@ -276,9 +345,15 @@ function syncIdentityLeaders() {
 }
 
 export async function enterAnjing(player) {
-    await restoreAnjing(player);
-    if (player.storage.zshyAnjingEntered) return;
-    player.storage.zshyAnjingEntered = true;
+    if (player.storage.zshyAnjingEntered || player.storage.zshyAnjingEntering) return;
+    player.storage.zshyAnjingEntering = true;
+    try {
+        await chooseAnjingDeputy(player);
+        await restoreAnjing(player);
+        player.storage.zshyAnjingEntered = true;
+    } finally {
+        delete player.storage.zshyAnjingEntering;
+    }
     const targets = [...game.players].sortBySeat();
     // 先明置国战武将，防止之后明置把刚分配的身份再次覆盖。
     for (const target of targets) if (target.isUnseen?.()) await target.showCharacter(2);
@@ -342,6 +417,14 @@ export function finishAnjingVictory(player) {
 }
 
 const runtime = {
+    beginDeputyChange(player, id) {
+        registerAnjing(player);
+        deputies.get(player).pending = id;
+    },
+    endDeputyChange(player) {
+        const state = deputies.get(player);
+        if (state) { state.id = player.name2 || state.id; delete state.pending; }
+    },
     // 客机可能在本地技能初始化前收到主机的结束函数，先保存本体入口供其使用。
     clientOver: game.over,
     baseOver: null,
