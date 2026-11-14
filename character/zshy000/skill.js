@@ -1834,6 +1834,7 @@ const wxgySkill = {
         mark: true,
         init(player, skill) {
             if (!player.storage[skill]) player.storage[skill] = {};
+            if (!player.storage[skill].lockedSouls) player.storage[skill].lockedSouls = [];
         },
         trigger: { player: ['damageEnd'], global: ['phaseBefore', 'roundEnd'] },
         filter(event, player, name) {
@@ -1846,11 +1847,8 @@ const wxgySkill = {
         async content(event, trigger, player) {
             const skill = lib.skill.zshy_H;
             if (event.triggername === 'phaseBefore') await skill.initHuanhun(player);
-            else if (event.triggername === 'damageEnd') await skill.gainSouls(player, trigger.num || 1);
-            else if (event.triggername === 'roundEnd') {
-                await player.gainMaxHp(1);
-                await player.recover(1);
-            }
+            else if (event.triggername === 'damageEnd') await skill.gainSouls(player, trigger.num, true);
+            else if (event.triggername === 'roundEnd') await skill.finishRound(player);
         },
         // 化身式：把「魂」作为角色牌展示在标记里
         soulButton(item, type, position, noclick, node) {
@@ -1902,17 +1900,25 @@ const wxgySkill = {
         intro: {
             mark(dialog, storage, player) {
                 if (!storage) return '没有「魂」';
-                const list = [];
-                if (storage.current) list.push(storage.current);
-                if (storage.souls) list.addArray(storage.souls);
-                if (!list.length) {
+                const souls = storage.souls || [];
+                const locked = storage.lockedSouls || [];
+                if (!souls.length) {
                     dialog.addText('没有「魂」');
                     return;
                 }
-                dialog.addSmall([list, (item, type, position, noclick, node) => lib.skill.zshy_H.soulButton(item, type, position, noclick, node)]);
+                const addSouls = (title, list) => {
+                    if (!list.length) return;
+                    dialog.addText(title);
+                    dialog.addSmall([list, (item, type, position, noclick, node) => lib.skill.zshy_H.soulButton(item, type, position, noclick, node)]);
+                };
+                addSouls('当前展示的「魂」', souls.filter(id => id === storage.current && !locked.includes(id)));
+                addSouls('未展示的「魂」', souls.filter(id => id !== storage.current && !locked.includes(id)));
+                addSouls('已锁定的「魂」（本局不能再选择或弃置）', souls.filter(id => locked.includes(id)));
             },
             content(storage) {
-                return '共有' + (storage && storage.souls ? storage.souls.length : 0) + '张「魂」';
+                const souls = storage?.souls || [];
+                const locked = storage?.lockedSouls || [];
+                return '共有' + souls.length + '张「魂」，其中' + souls.filter(id => locked.includes(id)).length + '张已锁定';
             },
             markcount(storage) {
                 return storage && storage.souls ? storage.souls.length : 0;
@@ -1933,6 +1939,22 @@ const wxgySkill = {
             if (list.length) return list;
             return Object.keys(lib.character).filter(id => id !== 'zshy_WXGYHun' && lib.translate[id]);
         },
+        initialCharacters() {
+            // 按武将牌ID排除已登场的主/副将，不排除未登场的同名版本。
+            const appeared = new Set();
+            for (const current of game.players.concat(game.dead || [])) {
+                for (const key of ['name', 'name1', 'name2']) {
+                    if (current[key]) appeared.add(current[key]);
+                }
+            }
+            return lib.skill.zshy_H.allCharacters().filter(id => !appeared.has(id));
+        },
+        selectableSouls(player, excludeCurrent = false) {
+            const storage = player.storage.zshy_H;
+            if (!storage) return [];
+            const locked = storage.lockedSouls || [];
+            return (storage.souls || []).filter(id => !locked.includes(id) && (!excludeCurrent || id !== storage.current));
+        },
         sameNameCharacters(id) {
             const library = lib.zshyNameLibrary;
             if (library && library.baseVariants) {
@@ -1949,14 +1971,17 @@ const wxgySkill = {
             return lib.skill.zshy_H.allCharacters().filter(cid => lib.skill.zshy_H.cleanName(cid) === base);
         },
         async chooseFromPool(player, pool, prompt) {
-            if (!pool || !pool.length) pool = lib.skill.zshy_H.allCharacters();
             if (!pool || !pool.length) return null;
             if (!((player === game.me && !_status.auto) || (player !== game.me && player.isUnderControl(true)))) return pool.randomGet();
             // 本体自由选将框；临时绕过 lib.characterFilter（否则“烬系/诸神寰宇仅点将”等设置会把扩展武将过滤掉）
             const savedCharacterFilter = lib.characterFilter;
-            lib.characterFilter = {};
-            const dialog = ui.create.characterDialog(function (id) { return !pool.includes(id); });
-            lib.characterFilter = savedCharacterFilter;
+            let dialog;
+            try {
+                lib.characterFilter = {};
+                dialog = ui.create.characterDialog(function (id) { return !pool.includes(id); });
+            } finally {
+                lib.characterFilter = savedCharacterFilter;
+            }
             // 在选将框顶部补当前步骤说明
             const promptNode = ui.create.div('.caption', '<div style="padding:6px 4px;line-height:1.6;">' + prompt + '</div>');
             if (dialog.content && dialog.content.firstChild) dialog.content.insertBefore(promptNode, dialog.content.firstChild);
@@ -1995,23 +2020,20 @@ const wxgySkill = {
             return best;
         },
         getBestSoul(player, cond) {
-            const storage = player.storage.zshy_H;
-            if (!storage || !storage.souls.length) return null;
             let best = null, bestRank = -1;
-            for (const id of storage.souls) {
-                if (id === storage.current) continue;
+            for (const id of lib.skill.zshy_H.selectableSouls(player, true)) {
                 const rank = lib.skill.zshy_H.soulRank(id, cond || 'out');
                 if (rank > bestRank) { best = id; bestRank = rank; }
             }
             return best ? { id: best, rank: bestRank } : null;
         },
         // 选「魂」用化身机制：dialog + chooseButton(true)；自由选将只给开局选武将图
-        async chooseSoul(player, list, prompt, min, max) {
+        async chooseSoul(player, list, prompt, min, max, discarding = false) {
             if (!list || !list.length) return [];
             if (!((player === game.me && !_status.auto) || (player !== game.me && player.isUnderControl(true)))) {
                 const count = Math.min(list.length, max || 1);
                 const scored = list.map(id => ({ id: id, rank: lib.skill.zshy_H.soulRank(id, 'out') }));
-                scored.sort((a, b) => (max || 1) > 1 ? a.rank - b.rank : b.rank - a.rank);
+                scored.sort((a, b) => discarding ? a.rank - b.rank : b.rank - a.rank);
                 return scored.slice(0, count).map(x => x.id);
             }
             const dialog = ui.create.dialog(prompt, [list.slice(), 'character']);
@@ -2019,6 +2041,7 @@ const wxgySkill = {
             const result = await player.chooseButton(true)
                 .set('dialog', dialog.videoId)
                 .set('selectButton', [min || 1, max || 1])
+                .set('ai', button => (discarding ? -1 : 1) * lib.skill.zshy_H.soulRank(button.link, 'out'))
                 .forResult();
             dialog.close();
             return (result && result.bool && result.links) ? result.links.slice() : [];
@@ -2039,14 +2062,18 @@ const wxgySkill = {
         async compensate(player) {
             await player.chooseDrawRecover(true);
         },
-        async gainSouls(player, count) {
+        async gainSouls(player, count, drawWhenEmpty = false) {
             const storage = player.storage.zshy_H;
             if (!storage || !storage.basename) return;
-            const pool = lib.skill.zshy_H.sameNameCharacters(storage.avatar || storage.basename);
             const newList = [];
             for (let i = 0; i < count; i++) {
+                const pool = lib.skill.zshy_H.sameNameCharacters(storage.avatar || storage.basename);
                 const remain = pool.filter(id => !storage.souls.includes(id));
-                if (!remain.length) break; // 没有新的「魂」可拿：不重复、不获得
+                if (!remain.length) {
+                    if (drawWhenEmpty) await player.draw(1); // 受伤逐点补偿；重铸池空不补偿。
+                    else break;
+                    continue;
+                }
                 const id = remain.randomGet();
                 storage.souls.push(id);
                 newList.push(id);
@@ -2057,7 +2084,7 @@ const wxgySkill = {
         },
         async applySoul(player, id) {
             const storage = player.storage.zshy_H;
-            if (!storage) return;
+            if (!storage || !lib.skill.zshy_H.selectableSouls(player).includes(id)) return false;
             const character = get.character(id);
             const data = lib.character[id] || {};
             const skills = (data.skills || character[3] || []).filter(function (skill) {
@@ -2077,21 +2104,52 @@ const wxgySkill = {
             if (skills.length) await player.addAdditionalSkills('zshy_H', skills, true);
             player.update();
             lib.skill.zshy_H.updateMark(player);
+            return true;
         },
-        async chooseSoulToApply(player) {
+        async chooseSoulToApply(player, excludeCurrent = false, compensateWhenEmpty = false) {
+            const skill = lib.skill.zshy_H;
+            const pool = skill.selectableSouls(player, excludeCurrent);
+            if (!pool.length) {
+                if (compensateWhenEmpty) await skill.compensate(player);
+                return false;
+            }
+            const links = await skill.chooseSoul(player, pool, '还魂：请选择一张未锁定的「魂」。将你的势力、性别调整为该武将牌，并视为拥有其技能', 1, 1);
+            if (pool.includes(links[0])) return await skill.applySoul(player, links[0]);
+            return false;
+        },
+        async finishRound(player) {
+            const skill = lib.skill.zshy_H;
             const storage = player.storage.zshy_H;
-            if (!storage || !storage.souls.length) return;
-            const links = await lib.skill.zshy_H.chooseSoul(player, storage.souls, '唤魂：请选择一张「魂」。将你的势力、性别调整为该武将牌，并获得其技能', 1, 1);
-            if (links.length) await lib.skill.zshy_H.applySoul(player, links[0]);
+            await player.gainMaxHp(1);
+            await player.recover(1);
+            const id = storage.current;
+            if (id && skill.selectableSouls(player).includes(id)) {
+                const data = lib.character[id] || get.character(id) || {};
+                const skills = (data.skills || data[3] || []).filter(name => name !== 'zshy_H' && !player.skills.includes(name));
+                // 保留这张魂以防重新抽到；在可能触发嵌套事件的技能授予前登记锁定。
+                if (!storage.lockedSouls) storage.lockedSouls = [];
+                storage.lockedSouls.push(id);
+                // 先转为正式技能，再移除当前展示魂的附加来源。两者重名时不会误删。
+                // 绝恒技是否可获得仍由项目统一的 changeSkills/addSkill 保护层判断。
+                if (skills.length) await player.addSkills(skills);
+                if (storage.current === id) {
+                    storage.current = null;
+                    storage.skills = [];
+                    await player.removeAdditionalSkills('zshy_H');
+                }
+                skill.updateMark(player);
+            }
+            await skill.chooseSoulToApply(player, false, true);
         },
         async initHuanhun(player) {
             refreshNameLibrary();
-            const avatar = await lib.skill.zshy_H.chooseFromPool(player, lib.skill.zshy_H.allCharacters(), '唤魂：请选择一张武将牌作为你的武将图。确认后将复制该武将牌的体力上限与体力值，武将名改为「魂」+其名字（去前缀），并获得四张与其同名的「魂」');
-            if (!avatar) return;
+            const pool = lib.skill.zshy_H.initialCharacters();
+            const avatar = await lib.skill.zshy_H.chooseFromPool(player, pool, '还魂：请选择一张场上未登场的武将牌作为本局武将图。复制其初始体力、体力上限、势力与性别，将武将名改为「魂」+去除前缀后的名字，并获得所选武将牌及随机的一张其他同名「魂」');
+            if (!avatar || !pool.includes(avatar)) return;
             const character = get.character(avatar);
             const data = lib.character[avatar] || {};
             const basename = lib.skill.zshy_H.cleanName(avatar);
-            const storage = { initialized: true, avatar: avatar, basename: basename, souls: [], current: null, skills: [] };
+            const storage = { initialized: true, avatar: avatar, basename: basename, souls: [], lockedSouls: [], current: null, skills: [] };
             player.storage.zshy_H = storage;
             lib.skill.zshy_H.updateName(player, basename);
             // 选完武将图立即替换立绘（立绘/阵亡音效跟随武将图）
@@ -2113,14 +2171,13 @@ const wxgySkill = {
             if (character[1]) await player.changeGroup(character[1]);
             player.update();
             const same = lib.skill.zshy_H.sameNameCharacters(avatar);
-            storage.souls = [avatar]; // 潜规则：开局选的武将图必定是第一张「魂」
+            storage.souls = [avatar]; // 开局武将图固定为第一张魂，另随机获得一张同名魂。
             const rest = same.filter(id => id !== avatar);
-            for (let i = 1; i < 4; i++) {
-                const remain = rest.filter(id => !storage.souls.includes(id));
-                if (!remain.length) break;
-                storage.souls.push(remain.randomGet());
+            if (rest.length) storage.souls.push(rest.randomGet());
+            if (storage.souls.length < 2) {
+                await player.gainMaxHp(1);
+                await player.recover(1);
             }
-            for (let i = storage.souls.length; i < 4; i++) await lib.skill.zshy_H.compensate(player);
             lib.skill.zshy_H.drawSouls(player, storage.souls.slice());
             lib.skill.zshy_H.updateMark(player);
             await lib.skill.zshy_H.chooseSoulToApply(player);
@@ -2129,8 +2186,13 @@ const wxgySkill = {
         async prepareSouls(event, trigger, player) {
             const skill = lib.skill.zshy_H;
             const storage = player.storage.zshy_H;
-            const { control } = await player.chooseControl('替换「魂」', '重铸「魂」', '取消')
-                .set('prompt', '唤魂·准备阶段：请选择操作。替换「魂」：调整你的势力、性别并获得其技能；重铸「魂」：弃置「魂」并换取新的同名武将牌')
+            const available = skill.selectableSouls(player, true);
+            if (!available.length) return;
+            const controls = ['替换「魂」'];
+            if (game.roundNumber > 0) controls.push('重铸「魂」');
+            controls.push('取消');
+            const { control } = await player.chooseControl(...controls)
+                .set('prompt', '还魂·准备阶段：替换展示的「魂」，或重铸至多当前轮数张未展示、未锁定的「魂」。已锁定的「魂」本局不能再选择或弃置')
                 .set('ai', () => {
                     const st = player.storage.zshy_H;
                     if (!st) return '取消';
@@ -2139,28 +2201,25 @@ const wxgySkill = {
                     if (best && best.rank > curRank + 0.5) return '替换「魂」';
                     const pool = lib.skill.zshy_H.sameNameCharacters(st.avatar || st.basename);
                     const unowned = pool.filter(id => !st.souls.includes(id));
-                    const weak = st.souls.some(id => id !== st.current && lib.skill.zshy_H.soulRank(id, 'out') < curRank);
-                    if (weak && unowned.length) return '重铸「魂」';
+                    const weak = skill.selectableSouls(player, true).some(id => skill.soulRank(id, 'out') < curRank);
+                    if (weak && unowned.length && controls.includes('重铸「魂」')) return '重铸「魂」';
                     return '取消';
                 })
                 .forResult();
             if (control === '取消' || !control) return;
             if (control === '替换「魂」') {
-                await skill.chooseSoulToApply(player);
+                await skill.chooseSoulToApply(player, true);
                 return;
             }
-            const candidates = storage.souls.filter(id => id !== storage.current); // 学界左慈：当前展示的魂不能重铸
+            if (control !== '重铸「魂」') return;
+            const candidates = skill.selectableSouls(player, true);
             const max = Math.min(game.roundNumber, candidates.length);
             if (max <= 0) return;
-            const links = await skill.chooseSoul(player, candidates, '唤魂：请选择要重铸的「魂」（本次至多 ' + max + ' 张）', 1, max);
+            const chosen = await skill.chooseSoul(player, candidates, '还魂：请选择要重铸的未展示、未锁定「魂」（本次至多 ' + max + ' 张）', 1, max, true);
+            const links = [...new Set(chosen)].filter(id => skill.selectableSouls(player, true).includes(id)).slice(0, max);
             if (!links.length) return;
             for (const id of links) {
                 storage.souls.remove(id);
-                if (storage.current === id) {
-                    storage.current = null;
-                    storage.skills = [];
-                    if (player.removeAdditionalSkills) await player.removeAdditionalSkills('zshy_H');
-                }
             }
             skill.loseSouls(player, links);
             await skill.gainSouls(player, links.length);

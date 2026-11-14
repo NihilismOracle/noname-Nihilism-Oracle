@@ -16,8 +16,11 @@ const heading = latest.text.match(/^(\d{8})（(\d+\.\d+\.\d+)，适配无名杀 
 if (!heading) throw new Error('最新公告标题须为 YYYYMMDD（扩展版本，适配无名杀 本体版本）');
 const [, date, version, gameVersion] = heading;
 const changelog = fs.readFileSync(path.join(root, '更新日志.md'), 'utf8');
-const logSections = changelog.split(/\r?\n/).filter(line => /^\d{8}(?:[（(]|\s*$)/.test(line));
-if (logSections.at(-1) !== latest.text) throw new Error('更新日志与公告的最新日期、版本或适配本体不一致');
+// 日常改动可累计在未发布段；这里只核对最后一次正式发布，不将待发布内容写入公告。
+const logSections = changelog.split(/\r?\n/).filter(line =>
+    /^\d{8}(?:[（(]|\s*$)/.test(line) && !/^\d{8}（未发布，基于\d+\.\d+\.\d+）$/.test(line)
+);
+if (logSections.at(-1) !== latest.text) throw new Error('更新日志与公告的最新正式发布日期、版本或适配本体不一致');
 
 const items = [];
 for (const line of lines.slice(latest.index + 1)) {
