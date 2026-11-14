@@ -1,5 +1,8 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
 import { getBaseName, refreshNameLibrary } from '../../extension/name-library.js';
+// 运行时牌池缓存与受保护的技能定义分离，避免把规则定义当作可变存储。
+let yicePoolCache = null;
+let huashenPoolCache = null;
 const 光阴长河 = {
     zshy_jinmie: {//烬灭
         audio: 'ext:诸神寰宇/audio/character:1',
@@ -481,10 +484,9 @@ const 光阴长河 = {
             return isFinite(num) ? num : 0;
         },
         //按「势力|性别|初始体力值」分组的武将池，获得技能时扫一次 lib.character，之后直接查表
-        yicePool: null,
         buildYicePool() {
             const info = lib.skill.zshy_yice;
-            if (!info.yicePool) {
+            if (!yicePoolCache) {
                 const pool = new Map();
                 for (const name in lib.character) {
                     if (name.includes('zshy_AAA')) continue;
@@ -494,9 +496,9 @@ const 光阴长河 = {
                     if (!pool.has(key)) pool.set(key, []);
                     pool.get(key).push(name);
                 }
-                info.yicePool = pool;
+                yicePoolCache = pool;
             }
-            return info.yicePool;
+            return yicePoolCache;
         },
         init(player, skill) {
             if (!player.storage[skill]) player.storage[skill] = {};
@@ -1514,10 +1516,8 @@ const 光阴长河 = {
             }
         },
         //只从诸神寰宇自己的武将包（zshy_ 系列包与 Nihilism 包）里抽，获得技能时扫一次并缓存
-        huashenPool: null,
         getHuashenPool() {
-            const info = lib.skill.zshy_JZChuanshen;
-            if (!info.huashenPool) {
+            if (!huashenPoolCache) {
                 const names = new Set();
                 for (const packName in lib.characterPack) {
                     if (packName != 'Nihilism' && !packName.startsWith('zshy_')) continue;
@@ -1527,9 +1527,9 @@ const 光阴长河 = {
                         names.add(name);
                     }
                 }
-                info.huashenPool = [...names];
+                huashenPoolCache = [...names];
             }
-            return info.huashenPool;
+            return huashenPoolCache;
         },
         init(player, skill) {
             //获得技能时准备幻身池

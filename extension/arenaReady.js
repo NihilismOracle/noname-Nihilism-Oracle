@@ -1,4 +1,5 @@
 import { lib, game, get } from '../../../noname.js';
+import { installSkillProtection } from './skillProtection.js';
 
 /**
  * 绝恒技（NihilismSkill）免疫系统。
@@ -326,4 +327,5 @@ export async function arenaReady() {
         runSettings1();
         runSettings2();
     }, createViewAsToUseTranslation, () => addSkilltag('NihilismSkill'));
+    installSkillProtection();
 }

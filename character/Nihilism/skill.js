@@ -1,4 +1,5 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
+import { registerAnjing, isAnjing, restoreAnjing, enterAnjing, rescueAnjing, insertAnjingPhase, kuimingEffect, sameCamp, unifiedWith, convertToAnjing, finishAnjingVictory, xuwuCards, fromMingying } from './anjing.js';
 //新版引擎的lib.character[i]是Character对象（没有数组下标4），旧版是六段数组。
 //Character的[4]是Proxy getter，每读一次都要重建整个trash数组，遍历时绝不能反复读。
 const NihilismCharacterFlags = character => {
@@ -140,79 +141,39 @@ const 远古遗神 = {
         noAdd: true,
         fixed: true,
         priority: Infinity,
-        async init(player) {
-            if (!player.isDisabledJudge()) {
-                await player.disableJudge();
-            };
-            const first = player.name1, second = 'zshy_AAAAantianhen';
-            lib.element.player.uninit.call(player);
-            lib.element.player.init.call(player, first, second);
-            if (game.countPlayer(function (target) {
-                return target.identity == 'unknown' || target.group == 'unknown' || target.name1 == 'unknown' || target.name2 == 'unknown';
-            }) > 0) {
-                game.showIdentity(true);
-            }
-            await game.delay(0.2);
-            function getAllExistingIdentities() {
-                const identities = [];
-                game.players.forEach(player => {
-                    if (player.identity && !identities.includes(player.identity)) {
-                        identities.push(player.identity);
-                    }
-                    if (player.trueIdentity && !identities.includes(player.trueIdentity)) {
-                        identities.push(player.trueIdentity);
-                    }
-                });
-                game.dead.forEach(player => {
-                    if (player.identity && !identities.includes(player.identity)) {
-                        identities.push(player.identity);
-                    }
-                });
-                return Array.from(identities).filter(id => id !== 'unknown');
-            };
-            const targets = game.players.sortBySeat();
-            const identities = getAllExistingIdentities();
-            await Promise.all(targets.map(async function (target) {
-                const result = await player.chooseControl(identities)
-                    .set('prompt', '〖神尊〗：请分配' + get.translation(target) + '的身份牌')
-                    .set('ai', function () {
-                        return player.identity;
-                    }).forResult();
-                if (result && result.control) {
-                    target.identity = result.control;
-                    if (get.mode() == 'guozhan') {
-                        target.group = result.control;
-                    }
-                    target.setIdentity();
-                }
-            }))
-            await game.delay(0.2);
-            if (game.countPlayer(function (target) {
-                return target.identity != player.identity;
-            }) == 0) {
-                const overResult = await player.chooseBool().set('prompt', '〖神尊〗：是否获得胜利？').forResult();
-                if (overResult && overResult.bool) {
-                    await game.over(true);
-                }
-            };
-            await game.delay(0.2);
+        init(player) {
+            registerAnjing(player);
+        },
+        forceOut: true,
+        group: 'zshy_AJshenzun_enter',
+        subSkill: {
+            enter: {
+                trigger: { global: ['gameStart', 'phaseBefore'], player: 'enterGame' },
+                forced: true,
+                firstDo: true,
+                priority: Infinity,
+                charlotte: true,
+                superCharlotte: true,
+                forceDie: true,
+                forceOut: true,
+                filter(event, player) { return !player.storage.zshyAnjingEntered; },
+                async content(event, trigger, player) { await enterAnjing(player); },
+            },
         },
         trigger: {
-            global: ['dieBegin', 'roundStart', 'changeHpBegin', 'damageBegin', 'loseHpBegin', 'recoverBegin', 'gainMaxHpBegin', 'loseMaxHpBegin'],
+            global: ['dieBefore', 'roundStart', 'changeHpBefore', 'damageBefore', 'loseHpBefore', 'recoverBefore', 'gainMaxHpBefore', 'loseMaxHpBefore'],
         },
         async cost(event, trigger, player) {
             event.result = await player.chooseBool()
                 .set('prompt', get.translation(event.skill))
-                .set('prompt2', `是否立即执行1个出牌阶段`)
+                .set('prompt2', '是否立即插入并执行一个出牌阶段？')
                 .set('ai', function () {
-                    return true;
-                })
-                .forResult();
+                    // 真人仍可无限嵌套；托管在已插入阶段内默认不继续套娃。
+                    return !get.event().getParent('phaseUse')?._zshyAnjingInserted;
+                }).forResult();
         },
         async content(event, trigger, player) {
-            const next = player.phaseUse();
-            event.next.remove(next);
-            trigger.next.push(next);
+            await insertAnjingPhase(player);
         },
         ai: {
             //本身就是最高威胁：所有 AI 都应该优先处理
@@ -240,41 +201,21 @@ const 远古遗神 = {
         fixed: true,
         priority: Infinity,
         enable: ['chooseToUse', 'chooseToRespond'],
-        hiddenCard: true,
-        filter(event, player) {
-            for (const i of lib.inpile) {
-                const type = get.type2(i), filter = event.filterCard;
-                if ((type == 'basic' || type == 'trick' || type == 'delay' || type == 'zshy_feisheng') && filter({ name: i }, player, event)) return true;
-            }
-            return false;
+        hiddenCard(player, name) {
+            return lib.inpile.includes(name) && ['basic', 'trick', 'delay', 'zshy_feisheng'].includes(get.type2(name));
         },
+        filter(event, player) { return xuwuCards(event, player).length > 0; },
         prompt(event, player) {
             return '发动〖虚无〗，视为使用或打出一张基本/锦囊/飞升牌';
         },
         chooseButton: {
             dialog(event, player) {
-                const list = [];
-                for (const i of lib.inpile) {
-                    const type = get.type2(i), filter = event.filterCard;
-                    if (type == 'basic') {
-                        if (filter({ name: i }, player, event)) list.push(['基本', '', i]);
-                        if (i == 'sha') {
-                            for (const j of lib.inpile_nature) {
-                                if (filter({ name: i, nature: j }, player, event)) list.push(['基本', '', 'sha', j]);
-                            }
-                        }
-                    }
-                    if (type == 'trick' || type == 'delay') {
-                        if (filter({ name: i }, player, event)) list.push(['锦囊', '', i]);
-                    }
-                    if (type == 'zshy_feisheng') {
-                        if (filter({ name: i }, player, event)) list.push(['飞升', '', i]);
-                    }
-                }
+                const list = xuwuCards(event, player).map(card => [get.type2(card.name), '', card.name, card.nature]);
                 return ui.create.dialog('虚无', [list, 'vcard'], 'hidden');
             },
             filter(button, player) {
-                return _status.event.getParent().filterCard({ name: button.link[2] }, player, _status.event.getParent());
+                const parent = _status.event.getParent();
+                return parent.filterCard({ name: button.link[2], nature: button.link[3], isCard: true }, player, parent);
             },
             check(button) {
                 const player = _status.event.player;
@@ -300,17 +241,17 @@ const 远古遗神 = {
             },
         },
         mod: {
-            cardEnable() {
+            cardEnabled() {
                 return true;
             },
             ignoredHandcard() {
                 return true;
             },
-            cardGainable() {
-                return false;
-            },
-            cardDiscardable() {
-                return false;
+            cardEnabled2() { return true; },
+            cardRespondable() { return true; },
+            cardSavable() { return true; },
+            canBeDiscarded(card, player, target) {
+                if (player !== target) return false;
             },
             maxHandcardBase() {
                 return Infinity;
@@ -321,7 +262,7 @@ const 远古遗神 = {
             cardUsable() {
                 return Infinity;
             },
-            aiOrder(card) {
+            aiOrder(player, card) {
                 if (get.name(card) == 'sha') return Infinity;
             },
         },
@@ -367,31 +308,19 @@ const 远古遗神 = {
             global: 'phaseBefore',
         },
         filter(event, player, name) {
-            if (name == 'phaseBefore') {
-                return event.player.group != player.group || event.player.identity != player.identity;
-            }
-            return event.target?.isIn() && (event.target.group != player.group || event.target.identity != player.identity);
+            const target = name === 'phaseBefore' ? event.player : event.target;
+            return target && target !== player && target.isIn() && (!sameCamp(target, player) || target.group !== player.group || target.identity !== player.identity);
         },
         prompt2(event, player, name) {
-            if (name == 'phaseBefore') {
-                return `令${get.translation(event.player)}的势力与身份改为与你相同`;
-            }
-            return `令${get.translation(event.card)}对${get.translation(event.target)}无效，然后其势力与身份改为与你相同`;
+            const target = name === 'phaseBefore' ? event.player : event.target;
+            return '令' + get.translation(target) + '的势力、身份与阵营改为与你相同' + (name === 'phaseBefore' ? '' : '，且此牌对其无效');
         },
-        check() {
-            return true;
-        },
+        check() { return true; },
         async content(event, trigger, player) {
-            if (event.triggername == 'useCardToPlayered') {
-                trigger.excluded.push(trigger.target);
-            }
-            const target = event.triggername == 'useCardToPlayered' ? trigger.target : trigger.player;
-            target.group = player.group;
-            target.identity = player.identity;
-            target.setIdentity();
-            if (game.countPlayer(current => current.identity != player.identity) == 0) {
-                game.over(true);
-            };
+            if (event.triggername === 'useCardToPlayered') trigger.excluded.add(trigger.target);
+            const target = event.triggername === 'phaseBefore' ? trigger.player : trigger.target;
+            convertToAnjing(target, player);
+            if (unifiedWith(player)) finishAnjingVictory(player);
         },
     },
     zshy_AJhuanhun: {//唤魂
@@ -414,32 +343,21 @@ const 远古遗神 = {
         noAdd: true,
         fixed: true,
         popup: false,
+        priority: Infinity,
+        forceOut: true,
         trigger: {
-            global: ['phaseAnyBegin'],
+            global: ['phaseBefore', 'phaseAnyBefore'],
+            player: ['dieBefore', 'dyingBefore', 'turnOverAfter', 'linkAfter', 'changeCharacterAfter', 'rest'],
+        },
+        filter(event, player, name) {
+            return !player._zshyAnjingRestoring;
         },
         async content(event, trigger, player) {
-            if (player.name1 != 'Nihilism_AAAAanjing') {
-                await player.reinit(player.name1, 'Nihilism_AAAAanjing');
+            if (event.triggername === 'dieBefore') await rescueAnjing(trigger, player);
+            else {
+                if (event.triggername === 'dyingBefore') trigger.cancel();
+                await restoreAnjing(player);
             }
-            if (player.name2 != undefined && player.name2 != 'zshy_AAAAantianhen') {
-                await player.reinit(player.name2, 'zshy_AAAAantianhen');
-            }
-            if (player.isTurnedOver(true)) {
-                await player.turnOver(false);
-            }
-            if (player.isLinked(true)) {
-                await player.link(false);
-            }
-            if (!player.isAlive()) {
-                await player.revive();
-                game.addVideo('revive', player);
-                event.dead = player;
-            };
-            player.maxHp = Infinity;
-            player.hujia = Infinity;
-            player.hp = Infinity;
-            await player.update();
-            await game.delay();
         },
     },
     zshy_AJshenzuninfo: {//神尊
@@ -564,37 +482,11 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         NihilismSkill: true,
         forced: true,
-        trigger: { player: 'dieBegin' },
+        trigger: { player: 'dieBefore' },
+        filter(event, player) { return !isAnjing(player); },
         async content(event, trigger, player) {
             trigger.cancel();
-            if (!player.isAlive()) {
-                await player.revive();
-                game.addVideo('revive', player);
-                event.dead = player;
-            };
-            player.maxHp = 1;
-            player.hp = 1;
-            await player.update();
-            const targets = game.filterPlayer(function (target) {
-                return target != player;
-            }).sortBySeat()
-            for (const i of targets) {
-                const num = Math.max(0, i.hp - 1);
-                if (i.maxHp !== num) {
-                    if (i.maxHp > num) await i.loseMaxHp(i.maxHp - num);
-                    else await i.gainMaxHp(num - i.maxHp);
-                    if (i.hp > i.maxHp) i.hp = i.maxHp;
-                }
-                await i.update();
-                if (i.maxHp <= 0) {
-                    event._dyinged = true;
-                    await i.dying(event);
-                }
-            };
-            await game.delay();
-            const next = player.phaseUse();
-            event.next.remove(next);
-            trigger.next.push(next);
+            await kuimingEffect(player);
         },
         ai: {
             maixie: true,
@@ -617,11 +509,14 @@ const 远古遗神 = {
             global: ['damageAfter', 'gainMaxHpAfter'],
         },
         filter(event, player) {
-            return event.player != player;
+            return event.player !== player && event.num > 0 && !fromMingying(event);
         },
         async content(event, trigger, player) {
-            if (trigger.name == 'damage') await player.damage(trigger.num);
-            if (trigger.name == 'gainMaxHp') await player.gainMaxHp(trigger.num);
+            const next = trigger.name === 'damage'
+                ? player.damage(trigger.num, 'nosource', 'nocard')
+                : player.gainMaxHp(trigger.num);
+            next._zshyMingying = true;
+            await next;
         },
         ai: {
             //被动替所有人分担伤害，且濒死会触发复活：自己越挨打越强
