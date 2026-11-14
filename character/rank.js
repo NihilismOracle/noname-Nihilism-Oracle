@@ -34,7 +34,7 @@ export const rank = {
         ...Object.keys(SlayTheSpire),
     ],
     SSS: [
-        'zshy_WXGYHun',
+        'zshy_AAYBhun',
         ...Object.keys(光阴长河),
         ...Object.keys(曹魏),
         ...Object.keys(蜀汉),

@@ -381,33 +381,51 @@ const 武庙 = {
         prompt2(event, player) {
             return (player.countCards('h') < player.maxHp ? '将手牌摸至' + get.cnNumber(player.maxHp) + '张，然后' : '') + '将任意张牌随机置入牌堆并从牌堆或弃牌堆中获得等量点数为8的牌。';
         },
-        content() {
-            'step 0';
-            player.drawTo(player.maxHp);
-            'step 1';
-            var cards = player.getCards('he');
-            if (!cards.length) event.finish();
-            else if (cards.length == 1) event._result = { bool: true, cards: cards };
-            else player.chooseCard('雄幕：将任意张牌置入牌堆的随机位置', 'he', [1, Infinity], true).set('ai', card => {
-                return 6 - get.value(card);
+        async content(event, trigger, player) {
+            await player.drawTo(player.maxHp);
+            if (!player.countCards('he')) return;
+            // 任意张允许选0张；单张牌也进入选择，避免将唯一的8点牌强制置入牌堆。
+            const next = player.chooseCard('雄幕：将任意张牌置入牌堆的随机位置', 'he', [0, Infinity], true)
+                .set('prompt2', '可不选牌；点击“AI代选”选中所有点数不为8的可选牌，确认前仍可手动调整。')
+                .set('ai', card => get.number(card, player) === 8 ? -1 : 1)
+                .set('processAI', function () {
+                    const cards = player.getCards('he').filter(card => !card.classList.contains('uncheck') &&
+                        lib.filter.cardAiIncluded(card) && next.filterCard(card, player, next) && get.number(card, player) !== 8);
+                    return { bool: true, cards: cards };
+                });
+            let aiControl;
+            if (next.isMine()) {
+                aiControl = ui.create.control('AI代选', function () {
+                    if (get.event() !== next) return;
+                    // 与本体选牌按钮一样只调整勾选，不自动确认；先清除已有选择。
+                    game.uncheck('card');
+                    game.check();
+                    const cards = get.selectableCards().filter(card => get.number(card, player) !== 8);
+                    ui.selected.cards.addArray(cards);
+                    for (const card of cards) {
+                        card.classList.add('selected');
+                        card.updateTransform(true);
+                    }
+                    game.check();
+                    if (typeof next.custom?.add?.card === 'function') next.custom.add.card();
+                });
+            }
+            let result;
+            try {
+                result = await next.forResult();
+            } finally {
+                if (aiControl) aiControl.close();
+            }
+            if (!result?.bool || !result.cards?.length) return;
+            const cards = result.cards;
+            game.log(player, `将${get.cnNumber(cards.length)}张牌置入了牌堆`);
+            await player.loseToDiscardpile(cards, ui.cardPile, 'blank').set('log', false).set('insert_index', function () {
+                return ui.cardPile.childNodes[get.rand(0, ui.cardPile.childNodes.length - 1)];
             });
-            'step 2';
-            if (result.bool) {
-                var cards = result.cards;
-                event.cards = cards;
-                game.log(player, `将${get.cnNumber(cards.length)}张牌置入了牌堆`);
-                player.loseToDiscardpile(cards, ui.cardPile, 'blank').set('log', false).insert_index = function () {
-                    return ui.cardPile.childNodes[get.rand(0, ui.cardPile.childNodes.length - 1)];
-                };
-            } else event.finish();
-            'step 3';
-            var list = [],
-                shown = [];
-            var piles = ['cardPile', 'discardPile'];
-            for (var pile of piles) {
-                for (var i = 0; i < ui[pile].childNodes.length; i++) {
-                    var card = ui[pile].childNodes[i];
-                    var number = get.number(card, false);
+            const list = [], shown = [];
+            for (const pile of ['cardPile', 'discardPile']) {
+                for (const card of ui[pile].childNodes) {
+                    const number = get.number(card, false);
                     if (!list.includes(card) && number == 8) {
                         list.push(card);
                         if (pile == 'discardPile') shown.push(card);
@@ -417,9 +435,7 @@ const 武庙 = {
                 if (list.length >= cards.length) break;
             }
             if (list.length) {
-                var next = player.gain(list);
-                next.shown_cards = shown;
-                next.set('animate', function (event) {
+                await player.gain(list).set('shown_cards', shown).set('animate', function (event) {
                     var player = event.player,
                         cards = event.cards,
                         shown = event.shown_cards;

@@ -1,6 +1,6 @@
 import { lib, get } from '../../../noname.js';
 
-// 唤魂·名字库：统一登记武将“基础名”，供同名「魂」池使用（兼容不写 names 的扩展包）
+// 还魂·名字库：统一登记武将“基础名”，供同名「魂」池使用（兼容不写 names 的扩展包）
 const PREFIXES = ['经典神', '经典', '会玩', '手杀神', '手杀', '旧界', '旧谋', '长安神', '长安', '渭南神', '渭南', '骏骊神', '骏骊', 'TW神', 'TW', '用间', '承', '牢', '忍', '狂', '忠', 'RE', '新杀', 'SP', 'OL', 'MB', '界', '族', '势', '武', '魔', '仙', '龙', '圣', '皇', '王', '传说', '史诗', '稀有', '普通', '神', '冥', '幻', '墟', '烬', '威', '谋'];
 const manual = new Map();   // 武将 id → 手动指定的基础名
 // 异名同人：别名表（双向），其他扩展可用 registerAlias 追加
@@ -12,7 +12,7 @@ let cache = null;
 
 function validCharacter(id) {
     const character = lib.character[id];
-    if (!character || id === 'zshy_WXGYHun') return false;
+    if (!character || id === 'zshy_AAYBhun') return false;
     if (lib.config.banned && lib.config.banned.includes(id)) return false;
     if (character.isMinskin || character.isBoss || character.isHiddenBoss || character.isUnseen) return false;
     return true;

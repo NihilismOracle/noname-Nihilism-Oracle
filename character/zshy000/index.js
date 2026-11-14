@@ -42,7 +42,7 @@ game.import('character', function () {
     };
     for (const name in zshy_AA.character) {
         if (zshy_AA.translate[name]) {
-            if (name === 'zshy_WXGYHun') zshy_AA.translate[name + '_prefix'] = '魂';
+            if (name === 'zshy_AAYBhun') zshy_AA.translate[name + '_prefix'] = '魂';
             if (zshy_AA.translate[name].indexOf('烬') === 0) zshy_AA.translate[name + '_prefix'] = '烬';
             if (zshy_AA.translate[name].indexOf('烬神') === 0) zshy_AA.translate[name + '_prefix'] = '烬神';
         };

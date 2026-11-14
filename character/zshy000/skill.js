@@ -1828,7 +1828,7 @@ const 光阴长河 = {
 };
 
 const wxgySkill = {
-    zshy_H: {
+    zshy_Hhuanhun: {
         NihilismSkill: true,
         forced: true,
         mark: true,
@@ -1838,14 +1838,14 @@ const wxgySkill = {
         },
         trigger: { player: ['damageEnd'], global: ['phaseBefore', 'roundEnd'] },
         filter(event, player, name) {
-            if (name === 'phaseBefore') return player.name === 'zshy_WXGYHun' && game.phaseNumber === 0 && !(player.storage.zshy_H && player.storage.zshy_H.initialized);
-            const storage = player.storage.zshy_H;
+            if (name === 'phaseBefore') return player.name === 'zshy_AAYBhun' && game.phaseNumber === 0 && !(player.storage.zshy_Hhuanhun && player.storage.zshy_Hhuanhun.initialized);
+            const storage = player.storage.zshy_Hhuanhun;
             if (!storage || !storage.initialized) return false;
             if (name === 'damageEnd') return event.num > 0;
             return true;
         },
         async content(event, trigger, player) {
-            const skill = lib.skill.zshy_H;
+            const skill = lib.skill.zshy_Hhuanhun;
             if (event.triggername === 'phaseBefore') await skill.initHuanhun(player);
             else if (event.triggername === 'damageEnd') await skill.gainSouls(player, trigger.num, true);
             else if (event.triggername === 'roundEnd') await skill.finishRound(player);
@@ -1909,7 +1909,7 @@ const wxgySkill = {
                 const addSouls = (title, list) => {
                     if (!list.length) return;
                     dialog.addText(title);
-                    dialog.addSmall([list, (item, type, position, noclick, node) => lib.skill.zshy_H.soulButton(item, type, position, noclick, node)]);
+                    dialog.addSmall([list, (item, type, position, noclick, node) => lib.skill.zshy_Hhuanhun.soulButton(item, type, position, noclick, node)]);
                 };
                 addSouls('当前展示的「魂」', souls.filter(id => id === storage.current && !locked.includes(id)));
                 addSouls('未展示的「魂」', souls.filter(id => id !== storage.current && !locked.includes(id)));
@@ -1929,15 +1929,15 @@ const wxgySkill = {
         },
         validCharacter(id) {
             const character = lib.character[id];
-            if (!character || id === 'zshy_WXGYHun' || !lib.translate[id]) return false;
+            if (!character || id === 'zshy_AAYBhun' || !lib.translate[id]) return false;
             if (lib.config.banned && lib.config.banned.includes(id)) return false;
             if (character.isMinskin || character.isBoss || character.isHiddenBoss || character.isUnseen) return false;
             return true;
         },
         allCharacters() {
-            const list = Object.keys(lib.character).filter(id => lib.skill.zshy_H.validCharacter(id));
+            const list = Object.keys(lib.character).filter(id => lib.skill.zshy_Hhuanhun.validCharacter(id));
             if (list.length) return list;
-            return Object.keys(lib.character).filter(id => id !== 'zshy_WXGYHun' && lib.translate[id]);
+            return Object.keys(lib.character).filter(id => id !== 'zshy_AAYBhun' && lib.translate[id]);
         },
         initialCharacters() {
             // 按武将牌ID排除已登场的主/副将，不排除未登场的同名版本。
@@ -1947,10 +1947,10 @@ const wxgySkill = {
                     if (current[key]) appeared.add(current[key]);
                 }
             }
-            return lib.skill.zshy_H.allCharacters().filter(id => !appeared.has(id));
+            return lib.skill.zshy_Hhuanhun.allCharacters().filter(id => !appeared.has(id));
         },
         selectableSouls(player, excludeCurrent = false) {
-            const storage = player.storage.zshy_H;
+            const storage = player.storage.zshy_Hhuanhun;
             if (!storage) return [];
             const locked = storage.lockedSouls || [];
             return (storage.souls || []).filter(id => !locked.includes(id) && (!excludeCurrent || id !== storage.current));
@@ -1959,7 +1959,7 @@ const wxgySkill = {
             const library = lib.zshyNameLibrary;
             if (library && library.baseVariants) {
                 const target = library.baseVariants(id);
-                return lib.skill.zshy_H.allCharacters().filter(function (cid) {
+                return lib.skill.zshy_Hhuanhun.allCharacters().filter(function (cid) {
                     const variants = library.baseVariants(cid);
                     for (const v of variants) {
                         if (target.has(v)) return true;
@@ -1967,8 +1967,8 @@ const wxgySkill = {
                     return false;
                 });
             }
-            const base = lib.skill.zshy_H.cleanName(id);
-            return lib.skill.zshy_H.allCharacters().filter(cid => lib.skill.zshy_H.cleanName(cid) === base);
+            const base = lib.skill.zshy_Hhuanhun.cleanName(id);
+            return lib.skill.zshy_Hhuanhun.allCharacters().filter(cid => lib.skill.zshy_Hhuanhun.cleanName(cid) === base);
         },
         async chooseFromPool(player, pool, prompt) {
             if (!pool || !pool.length) return null;
@@ -2010,7 +2010,7 @@ const wxgySkill = {
         soulRank(id, cond) {
             const data = lib.character[id] || {};
             const skills = (data.skills || (get.character(id)[3] || [])).filter(function (s) {
-                return s !== 'zshy_H' && !((get.info(s) || {}).NihilismSkill);
+                return s !== 'zshy_Hhuanhun' && !((get.info(s) || {}).NihilismSkill);
             });
             let best = 0;
             for (const s of skills) {
@@ -2021,8 +2021,8 @@ const wxgySkill = {
         },
         getBestSoul(player, cond) {
             let best = null, bestRank = -1;
-            for (const id of lib.skill.zshy_H.selectableSouls(player, true)) {
-                const rank = lib.skill.zshy_H.soulRank(id, cond || 'out');
+            for (const id of lib.skill.zshy_Hhuanhun.selectableSouls(player, true)) {
+                const rank = lib.skill.zshy_Hhuanhun.soulRank(id, cond || 'out');
                 if (rank > bestRank) { best = id; bestRank = rank; }
             }
             return best ? { id: best, rank: bestRank } : null;
@@ -2032,7 +2032,7 @@ const wxgySkill = {
             if (!list || !list.length) return [];
             if (!((player === game.me && !_status.auto) || (player !== game.me && player.isUnderControl(true)))) {
                 const count = Math.min(list.length, max || 1);
-                const scored = list.map(id => ({ id: id, rank: lib.skill.zshy_H.soulRank(id, 'out') }));
+                const scored = list.map(id => ({ id: id, rank: lib.skill.zshy_Hhuanhun.soulRank(id, 'out') }));
                 scored.sort((a, b) => discarding ? a.rank - b.rank : b.rank - a.rank);
                 return scored.slice(0, count).map(x => x.id);
             }
@@ -2041,7 +2041,7 @@ const wxgySkill = {
             const result = await player.chooseButton(true)
                 .set('dialog', dialog.videoId)
                 .set('selectButton', [min || 1, max || 1])
-                .set('ai', button => (discarding ? -1 : 1) * lib.skill.zshy_H.soulRank(button.link, 'out'))
+                .set('ai', button => (discarding ? -1 : 1) * lib.skill.zshy_Hhuanhun.soulRank(button.link, 'out'))
                 .forResult();
             dialog.close();
             return (result && result.bool && result.links) ? result.links.slice() : [];
@@ -2052,22 +2052,22 @@ const wxgySkill = {
                 for (const p of game.players) {
                     if (p.name === hunId && p.node && p.node.name) p.node.name.innerHTML = get.slimName(hunId);
                 }
-            }, 'zshy_WXGYHun', '魂' + basename);
+            }, 'zshy_AAYBhun', '魂' + basename);
         },
         updateMark(player) {
-            if (player.markSkill) player.markSkill('zshy_H');
-            if (player.updateMarks) player.updateMarks('zshy_H');
-            if (player.syncStorage) player.syncStorage('zshy_H');
+            if (player.markSkill) player.markSkill('zshy_Hhuanhun');
+            if (player.updateMarks) player.updateMarks('zshy_Hhuanhun');
+            if (player.syncStorage) player.syncStorage('zshy_Hhuanhun');
         },
         async compensate(player) {
             await player.chooseDrawRecover(true);
         },
         async gainSouls(player, count, drawWhenEmpty = false) {
-            const storage = player.storage.zshy_H;
+            const storage = player.storage.zshy_Hhuanhun;
             if (!storage || !storage.basename) return;
             const newList = [];
             for (let i = 0; i < count; i++) {
-                const pool = lib.skill.zshy_H.sameNameCharacters(storage.avatar || storage.basename);
+                const pool = lib.skill.zshy_Hhuanhun.sameNameCharacters(storage.avatar || storage.basename);
                 const remain = pool.filter(id => !storage.souls.includes(id));
                 if (!remain.length) {
                     if (drawWhenEmpty) await player.draw(1); // 受伤逐点补偿；重铸池空不补偿。
@@ -2079,35 +2079,35 @@ const wxgySkill = {
                 newList.push(id);
                 game.log(player, '获得了一张', '#y「魂」');
             }
-            lib.skill.zshy_H.drawSouls(player, newList);
-            lib.skill.zshy_H.updateMark(player);
+            lib.skill.zshy_Hhuanhun.drawSouls(player, newList);
+            lib.skill.zshy_Hhuanhun.updateMark(player);
         },
         async applySoul(player, id) {
-            const storage = player.storage.zshy_H;
-            if (!storage || !lib.skill.zshy_H.selectableSouls(player).includes(id)) return false;
+            const storage = player.storage.zshy_Hhuanhun;
+            if (!storage || !lib.skill.zshy_Hhuanhun.selectableSouls(player).includes(id)) return false;
             const character = get.character(id);
             const data = lib.character[id] || {};
             const skills = (data.skills || character[3] || []).filter(function (skill) {
-                if (skill === 'zshy_H') return false;
+                if (skill === 'zshy_Hhuanhun') return false;
                 const info = get.info(skill);
                 return !(info && info.NihilismSkill);
             });
             storage.current = id;
             storage.skills = skills;
-            if (player.removeAdditionalSkills) await player.removeAdditionalSkills('zshy_H');
+            if (player.removeAdditionalSkills) await player.removeAdditionalSkills('zshy_Hhuanhun');
             if (character[0]) game.broadcastAll(function (p, sex) { p.sex = sex; }, player, character[0]);
             if (character[1]) await player.changeGroup(character[1]);
             player.setAvatar(player.name, id);
             setTimeout(function () {
                 player.setAvatar(player.name, storage.avatar);
             }, 1000);
-            if (skills.length) await player.addAdditionalSkills('zshy_H', skills, true);
+            if (skills.length) await player.addAdditionalSkills('zshy_Hhuanhun', skills, true);
             player.update();
-            lib.skill.zshy_H.updateMark(player);
+            lib.skill.zshy_Hhuanhun.updateMark(player);
             return true;
         },
         async chooseSoulToApply(player, excludeCurrent = false, compensateWhenEmpty = false) {
-            const skill = lib.skill.zshy_H;
+            const skill = lib.skill.zshy_Hhuanhun;
             const pool = skill.selectableSouls(player, excludeCurrent);
             if (!pool.length) {
                 if (compensateWhenEmpty) await skill.compensate(player);
@@ -2118,14 +2118,14 @@ const wxgySkill = {
             return false;
         },
         async finishRound(player) {
-            const skill = lib.skill.zshy_H;
-            const storage = player.storage.zshy_H;
+            const skill = lib.skill.zshy_Hhuanhun;
+            const storage = player.storage.zshy_Hhuanhun;
             await player.gainMaxHp(1);
             await player.recover(1);
             const id = storage.current;
             if (id && skill.selectableSouls(player).includes(id)) {
                 const data = lib.character[id] || get.character(id) || {};
-                const skills = (data.skills || data[3] || []).filter(name => name !== 'zshy_H' && !player.skills.includes(name));
+                const skills = (data.skills || data[3] || []).filter(name => name !== 'zshy_Hhuanhun' && !player.skills.includes(name));
                 // 保留这张魂以防重新抽到；在可能触发嵌套事件的技能授予前登记锁定。
                 if (!storage.lockedSouls) storage.lockedSouls = [];
                 storage.lockedSouls.push(id);
@@ -2135,7 +2135,7 @@ const wxgySkill = {
                 if (storage.current === id) {
                     storage.current = null;
                     storage.skills = [];
-                    await player.removeAdditionalSkills('zshy_H');
+                    await player.removeAdditionalSkills('zshy_Hhuanhun');
                 }
                 skill.updateMark(player);
             }
@@ -2143,21 +2143,21 @@ const wxgySkill = {
         },
         async initHuanhun(player) {
             refreshNameLibrary();
-            const pool = lib.skill.zshy_H.initialCharacters();
-            const avatar = await lib.skill.zshy_H.chooseFromPool(player, pool, '还魂：请选择一张场上未登场的武将牌作为本局武将图。复制其初始体力、体力上限、势力与性别，将武将名改为「魂」+去除前缀后的名字，并获得所选武将牌及随机的一张其他同名「魂」');
+            const pool = lib.skill.zshy_Hhuanhun.initialCharacters();
+            const avatar = await lib.skill.zshy_Hhuanhun.chooseFromPool(player, pool, '还魂：请选择一张场上未登场的武将牌作为本局武将图。复制其初始体力、体力上限、势力与性别，将武将名改为「魂」+去除前缀后的名字，并获得所选武将牌及随机的一张其他同名「魂」');
             if (!avatar || !pool.includes(avatar)) return;
             const character = get.character(avatar);
             const data = lib.character[avatar] || {};
-            const basename = lib.skill.zshy_H.cleanName(avatar);
+            const basename = lib.skill.zshy_Hhuanhun.cleanName(avatar);
             const storage = { initialized: true, avatar: avatar, basename: basename, souls: [], lockedSouls: [], current: null, skills: [] };
-            player.storage.zshy_H = storage;
-            lib.skill.zshy_H.updateName(player, basename);
+            player.storage.zshy_Hhuanhun = storage;
+            lib.skill.zshy_Hhuanhun.updateName(player, basename);
             // 选完武将图立即替换立绘（立绘/阵亡音效跟随武将图）
             player.setAvatar(player.name, avatar);
             game.broadcastAll(function (hunId, chosenId) {
                 const dieAudios = lib.character[chosenId] && lib.character[chosenId].dieAudios;
                 if (dieAudios && dieAudios.length) lib.character[hunId].dieAudios = dieAudios.slice();
-            }, 'zshy_WXGYHun', avatar);
+            }, 'zshy_AAYBhun', avatar);
             const BASE_MAXHP = 3;
             const maxHp = data.maxHp || data.hp || character.maxHp || character.hp || character[2] || 3;
             // init 时执行，主公 +1 等后续加成会在之后自然叠加，这里只处理有限占位差值
@@ -2170,7 +2170,7 @@ const wxgySkill = {
             if (character[0]) game.broadcastAll(function (p, sex) { p.sex = sex; }, player, character[0]);
             if (character[1]) await player.changeGroup(character[1]);
             player.update();
-            const same = lib.skill.zshy_H.sameNameCharacters(avatar);
+            const same = lib.skill.zshy_Hhuanhun.sameNameCharacters(avatar);
             storage.souls = [avatar]; // 开局武将图固定为第一张魂，另随机获得一张同名魂。
             const rest = same.filter(id => id !== avatar);
             if (rest.length) storage.souls.push(rest.randomGet());
@@ -2178,14 +2178,14 @@ const wxgySkill = {
                 await player.gainMaxHp(1);
                 await player.recover(1);
             }
-            lib.skill.zshy_H.drawSouls(player, storage.souls.slice());
-            lib.skill.zshy_H.updateMark(player);
-            await lib.skill.zshy_H.chooseSoulToApply(player);
+            lib.skill.zshy_Hhuanhun.drawSouls(player, storage.souls.slice());
+            lib.skill.zshy_Hhuanhun.updateMark(player);
+            await lib.skill.zshy_Hhuanhun.chooseSoulToApply(player);
         },
 
         async prepareSouls(event, trigger, player) {
-            const skill = lib.skill.zshy_H;
-            const storage = player.storage.zshy_H;
+            const skill = lib.skill.zshy_Hhuanhun;
+            const storage = player.storage.zshy_Hhuanhun;
             const available = skill.selectableSouls(player, true);
             if (!available.length) return;
             const controls = ['替换「魂」'];
@@ -2194,12 +2194,12 @@ const wxgySkill = {
             const { control } = await player.chooseControl(...controls)
                 .set('prompt', '还魂·准备阶段：替换展示的「魂」，或重铸至多当前轮数张未展示、未锁定的「魂」。已锁定的「魂」本局不能再选择或弃置')
                 .set('ai', () => {
-                    const st = player.storage.zshy_H;
+                    const st = player.storage.zshy_Hhuanhun;
                     if (!st) return '取消';
-                    const curRank = st.current ? lib.skill.zshy_H.soulRank(st.current, 'out') : -1;
-                    const best = lib.skill.zshy_H.getBestSoul(player, 'out');
+                    const curRank = st.current ? lib.skill.zshy_Hhuanhun.soulRank(st.current, 'out') : -1;
+                    const best = lib.skill.zshy_Hhuanhun.getBestSoul(player, 'out');
                     if (best && best.rank > curRank + 0.5) return '替换「魂」';
-                    const pool = lib.skill.zshy_H.sameNameCharacters(st.avatar || st.basename);
+                    const pool = lib.skill.zshy_Hhuanhun.sameNameCharacters(st.avatar || st.basename);
                     const unowned = pool.filter(id => !st.souls.includes(id));
                     const weak = skill.selectableSouls(player, true).some(id => skill.soulRank(id, 'out') < curRank);
                     if (weak && unowned.length && controls.includes('重铸「魂」')) return '重铸「魂」';
@@ -2226,7 +2226,7 @@ const wxgySkill = {
 
         },
 
-        group: ['zshy_H_prepare'],
+        group: ['zshy_Hhuanhun_prepare'],
 
         subSkill: {
             prepare: {
@@ -2234,8 +2234,8 @@ const wxgySkill = {
                 forced: true,
                 popup: false,
                 charlotte: true,
-                filter(event, player) { return event.name === 'phaseZhunbei' && !!player.storage.zshy_H?.initialized; },
-                async content(event, trigger, player) { await lib.skill.zshy_H.prepareSouls(event, trigger, player); },
+                filter(event, player) { return event.name === 'phaseZhunbei' && !!player.storage.zshy_Hhuanhun?.initialized; },
+                async content(event, trigger, player) { await lib.skill.zshy_Hhuanhun.prepareSouls(event, trigger, player); },
             },
         },
     },

@@ -85,14 +85,14 @@ export const 光阴长河 = {
 
 
 export const 万象归一 = {
-    zshy_WXGYHun: {
+    zshy_AAYBhun: {
         names: '魂',
         hp: Infinity,
         maxHp: Infinity,
         hujia: 0,
         sex: 'none',
         group: 'key',
-        skills: ['zshy_H'],
+        skills: ['zshy_Hhuanhun'],
     },
 };
 
@@ -102,15 +102,15 @@ export const characters = {
 };
 
 const WXGY_ROLEBACK = (lib.config && lib.config.extension_诸神寰宇_WJBJ) || '无名';
-characters.zshy_WXGYHun.img = 'extension/诸神寰宇/other/Picture/Roleback/' + (WXGY_ROLEBACK === '默认' ? '无名' : WXGY_ROLEBACK) + '.jpg';
-characters.zshy_WXGYHun.dieAudios = [];
+characters.zshy_AAYBhun.img = 'extension/诸神寰宇/other/Picture/Roleback/' + (WXGY_ROLEBACK === '默认' ? '无名' : WXGY_ROLEBACK) + '.jpg';
+characters.zshy_AAYBhun.dieAudios = [];
 
 for (const name in characters) {
     characters[name].img = `extension/诸神寰宇/image/character/zshy_AA/${name}.jpg`;
     characters[name].dieAudios = [`ext:诸神寰宇/audio/character/${name}.mp3`];
 }
 
-characters.zshy_WXGYHun.img = 'extension/诸神寰宇/other/Picture/Roleback/' + (WXGY_ROLEBACK === '默认' ? '无名' : WXGY_ROLEBACK) + '.jpg';
-characters.zshy_WXGYHun.dieAudios = [];
+characters.zshy_AAYBhun.img = 'extension/诸神寰宇/other/Picture/Roleback/' + (WXGY_ROLEBACK === '默认' ? '无名' : WXGY_ROLEBACK) + '.jpg';
+characters.zshy_AAYBhun.dieAudios = [];
 
 export default characters;
