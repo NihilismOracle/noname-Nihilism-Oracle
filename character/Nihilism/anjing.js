@@ -229,14 +229,36 @@ export async function insertAnjingPhase(player) {
     await next;
 }
 
-export async function kuimingEffect(player) {
-    if (isAnjing(player)) protectAnjing(player);
-    else {
-        if (player.isDead()) player.revive(1, false);
-        player.maxHp = player.hp = 1;
-        player.update();
+// 只执行〖馈命〗的保命部分：用于自身上限被压至0的连锁，不重复波及、不插入出牌阶段。
+export async function restoreKuimingOwner(player) {
+    if (isAnjing(player)) {
+        protectAnjing(player);
+        return;
     }
-    for (const target of game.filterPlayer(current => current !== player).sortBySeat()) {
+    if (player.isDead()) player.revive(1, false);
+    player.maxHp = player.hp = 1;
+    player.update();
+}
+
+export async function chooseKuimingTargets(player) {
+    if (!game.filterPlayer(target => target !== player && target.isIn()).length) return [];
+    const result = await player.chooseTarget(
+        '馈命：选择任意名其他角色（可不选），令其按座次依次将体力上限调整为其体力值减1（至少为0）',
+        [0, Infinity],
+        (card, player, target) => target !== player && target.isIn()
+    ).set('ai', target => {
+        if (!target) return 0;
+        const attitude = get.attitude(player, target);
+        return attitude < 0 ? -attitude : 0;
+    }).forResult();
+    return result?.targets || [];
+}
+
+export async function kuimingEffect(player, targets = []) {
+    await restoreKuimingOwner(player);
+    for (const target of [...targets].sortBySeat()) {
+        if (!target || target === player) continue;
+        if (target.isIn && !target.isIn()) continue;
         const value = Math.max(0, target.hp - 1);
         if (target.maxHp > value) await target.loseMaxHp(target.maxHp - value);
         else if (target.maxHp < value) await target.gainMaxHp(value - target.maxHp);
@@ -459,8 +481,4 @@ export function xuwuCards(event, player) {
         }
     }
     return list;
-}
-
-export function fromMingying(event) {
-    return !!event._zshyMingying || !!event.getParent?.(parent => parent._zshyMingying, true);
 }

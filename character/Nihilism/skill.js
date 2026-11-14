@@ -1,5 +1,5 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
-import { registerAnjing, isAnjing, restoreAnjing, enterAnjing, rescueAnjing, insertAnjingPhase, kuimingEffect, sameCamp, unifiedWith, convertToAnjing, finishAnjingVictory, xuwuCards, fromMingying } from './anjing.js';
+import { registerAnjing, isAnjing, restoreAnjing, enterAnjing, rescueAnjing, insertAnjingPhase, kuimingEffect, chooseKuimingTargets, sameCamp, unifiedWith, convertToAnjing, finishAnjingVictory, xuwuCards } from './anjing.js';
 //新版引擎的lib.character[i]是Character对象（没有数组下标4），旧版是六段数组。
 //Character的[4]是Proxy getter，每读一次都要重建整个trash数组，遍历时绝不能反复读。
 const NihilismCharacterFlags = character => {
@@ -474,6 +474,23 @@ const 远古遗神 = {
                 return num + 4;
             }
         },
+        // ①按描述在登场后执行；init 只负责技能获得时的兜底，开局与重新登场由本体事件补齐。
+        group: 'zshy_AllSkill_enter',
+        subSkill: {
+            enter: {
+                trigger: {
+                    global: ['gameStart'],
+                    player: ['enterGame'],
+                },
+                forced: true,
+                filter(event, player) {
+                    return !player.isDisabledJudge();
+                },
+                async content(event, trigger, player) {
+                    await player.disableJudge();
+                },
+            },
+        },
 
     },
 
@@ -485,7 +502,8 @@ const 远古遗神 = {
         trigger: { player: 'dieBefore' },
         async content(event, trigger, player) {
             trigger.cancel(isAnjing(player) ? false : undefined);
-            await kuimingEffect(player);
+            const targets = await chooseKuimingTargets(player);
+            await kuimingEffect(player, targets);
         },
         ai: {
             maixie: true,
@@ -495,7 +513,8 @@ const 远古遗神 = {
                     if (get.tag(card, 'save') || get.tag(card, 'recover')) return 'zeroplayertarget';
                 },
                 player(card, player, target) {
-                    if (get.tag(card, 'save') || get.tag(card, 'recover')) return 'zeroplayertarget';
+                    // 只有把救援/回复牌用在自己身上才没有意义；救队友按正常收益评估。
+                    if (target === player && (get.tag(card, 'save') || get.tag(card, 'recover'))) return 'zeroplayer';
                 }
             },
         },
@@ -505,17 +524,90 @@ const 远古遗神 = {
         NihilismSkill: true,
         forced: true,
         trigger: {
-            global: ['damageAfter', 'gainMaxHpAfter'],
+            global: ['damageAfter', 'loseHpAfter', 'gainMaxHpAfter'],
         },
         filter(event, player) {
-            return event.player !== player && event.num > 0 && !fromMingying(event);
+            return event.player !== player && event.num > 0;
         },
         async content(event, trigger, player) {
-            const next = trigger.name === 'damage'
-                ? player.damage(trigger.num, 'nosource', 'nocard')
-                : player.gainMaxHp(trigger.num);
-            next._zshyMingying = true;
-            await next;
+            if (trigger.name === 'gainMaxHp') {
+                await player.gainMaxHp(trigger.num);
+                return;
+            }
+            // 伤害或失去体力：先获得等量「影」，再承受等量无来源普通伤害。
+            player.addMark('zshy_ATHmingying_ying', trigger.num);
+            await player.damage(trigger.num, 'nosource', 'nocard');
+        },
+        // ③拆为子技能；可移去任意枚，不设每回合次数。
+        group: 'zshy_ATHmingying_yingyong',
+        subSkill: {
+            // 只用于「影」标记的显示与说明，不作为独立技能获得。
+            ying: {
+                mark: true,
+                charlotte: true,
+                intro: {
+                    content: '其他角色受到伤害或失去体力后获得等量「影」；出牌阶段可移去任意枚「影」，令一名角色摸等量牌、回复等量体力，或对一名其他角色造成等量普通伤害。',
+                },
+            },
+            yingyong: {
+                audio: 'ext:诸神寰宇/audio/character:2',
+                enable: 'phaseUse',
+                filter(event, player) {
+                    return player.countMark('zshy_ATHmingying_ying') > 0;
+                },
+                check(event, player) {
+                    return true;
+                },
+                prompt: '出牌阶段，你可移去任意枚「影」，然后选择一项：令一名角色摸等量的牌；令一名角色回复等量体力；对一名其他角色造成等量普通伤害',
+                async content(event, trigger, player) {
+                    const mark = 'zshy_ATHmingying_ying';
+                    const count = player.countMark(mark);
+                    if (count < 1) return;
+                    const amounts = [];
+                    for (let i = 1; i <= count; i++) amounts.push(`移去${i}枚`);
+                    let amount = 1;
+                    if (count > 1) {
+                        const picked = await player.chooseControl(amounts)
+                            .set('prompt', '【命影】：选择移去的「影」数量')
+                            .set('ai', () => amounts[count - 1]).forResult();
+                        const index = amounts.indexOf(picked?.control);
+                        if (index < 0) return;
+                        amount = index + 1;
+                    }
+                    const options = ['摸牌', '回复体力', '造成伤害'];
+                    const picked = await player.chooseControl(options)
+                        .set('prompt', `【命影】：移去${amount}枚「影」，选择一项`)
+                        .set('ai', () => {
+                            if (game.hasPlayer?.(target => target !== player && target.isIn() && get.attitude(player, target) < 0)) return '造成伤害';
+                            if (player.isDamaged?.()) return '回复体力';
+                            return '摸牌';
+                        }).forResult();
+                    const option = picked?.control;
+                    if (!options.includes(option)) return;
+                    const prompt = option === '造成伤害'
+                        ? `【命影】：选择一名其他角色，对其造成${amount}点普通伤害`
+                        : `【命影】：选择一名角色，令其${option === '摸牌' ? `摸${amount}张牌` : `回复${amount}点体力`}`;
+                    const result = await player.chooseTarget(prompt, [1, 1], (card, player, target) => {
+                        if (!target || (target.isIn && !target.isIn())) return false;
+                        return option === '造成伤害' ? target !== player : true;
+                    }).set('ai', target => {
+                        if (!target) return 0;
+                        if (option === '造成伤害') return -get.attitude(player, target);
+                        const attitude = get.attitude(player, target);
+                        return option === '回复体力' && !target.isDamaged?.() ? attitude * 0.2 : attitude;
+                    }).forResult();
+                    const target = result?.targets?.[0];
+                    if (!target) return;
+                    // 先支付再结算：③造成的伤害即使插入〖馈命〗的出牌阶段，也无法重复发动。
+                    player.removeMark(mark, amount);
+                    if (option === '摸牌') await target.draw(amount);
+                    else if (option === '回复体力') await target.recover(amount);
+                    else await target.damage(amount);
+                },
+                ai: {
+                    order: 8,
+                },
+            },
         },
         ai: {
             //被动替所有人分担伤害，且濒死会触发复活：自己越挨打越强
