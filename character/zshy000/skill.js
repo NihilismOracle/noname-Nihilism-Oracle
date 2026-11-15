@@ -90,10 +90,10 @@ const 光阴长河 = {
                 //队友：翻面状态下翻回正面，否则不发动
                 return target.isTurnedOver() ? 0 : -1;
             }
-            //敌人：能翻面就翻面（附带摸牌），已翻面或不能翻面时改为弃牌失血
+            //敌人：能翻面就翻面（附带摸牌）；已翻面或不能翻面时，手牌多优先禁手牌，否则弃牌失血
             if (!target.isTurnedOver() && !target.hasSkillTag('noturn')) return 0;
-            if (target.countCards('he') > 0) return 1;
-            return 2;
+            if (target.countCards('he') >= 3) return 2;
+            return 1;
         },
         async cost(event, trigger, player) {
             let target;
@@ -109,7 +109,15 @@ const 光阴长河 = {
                     .set('ai', function (target) {
                         const player = _status.event.player;
                         if (target == player) return -1;
-                        return get.attitude(player, target);
+                        const att = get.attitude(player, target);
+                        //队友：只有已翻面（可翻回）才有价值
+                        if (att > 0) return target.isTurnedOver() ? 1 : 0;
+                        //敌人：越敌对越优先；能翻面、手牌多、残血加权
+                        let value = -att;
+                        if (!target.isTurnedOver() && !target.hasSkillTag('noturn')) value += 1;
+                        if (target.countCards('he') > 2) value += 0.5;
+                        if (target.hp <= 1) value += 0.5;
+                        return value;
                     }).forResult()
                 if (!resulttarget?.bool || !resulttarget.targets?.length) {
                     event.result = { bool: false };
@@ -287,8 +295,8 @@ const 光阴长河 = {
                 .set('ai', function () {
                     const player = _status.event.player;
                     const worth = lib.skill.zshy_junwei.getWorth(trigger, player);
-                    //抵消后还能摸一张牌，这部分自身也是收益
-                    return worth + 1 > 0;
+                    //只抵消对己方不利的牌；摸牌收益另算，不倒贴
+                    return worth > 0;
                 }).forResult();
         },
         getWorth(trigger, player) {
@@ -365,7 +373,10 @@ const 光阴长河 = {
             event.result = await player.chooseBool(get.prompt('zshy_diye'),
                 `移去${num}枚「业」防止此伤害`).set('ai', function () {
                 const player = _status.event.player;
-                return get.damageEffect(player, trigger.source || player, player, trigger.nature) < 0;
+                //致命伤、重伤害、或体力告急且业充足时才抵消，避免把业烧在1点小伤害上
+                if (player.hp - num <= 0) return true;
+                if (num >= 2) return true;
+                return player.countMark('zshy_diye') >= 2 && player.hp <= 2;
             }).forResult();
         },
         async content(event, trigger, player) {
@@ -400,7 +411,6 @@ const 光阴长河 = {
             },
         },
         ai: {
-            maixie_hp: true,
             effect: {
                 target(card, player, target) {
                     if (get.tag(card, 'damage') && target.countMark('zshy_diye') > 0) return 0.5;
