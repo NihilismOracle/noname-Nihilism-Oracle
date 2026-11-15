@@ -168,7 +168,7 @@ const 光阴长河 = {
                     break;
             }
             //令其翻面或失去体力时获得「业」，每轮至多1枚
-            if (event.cost_data != '选项三' && player.countMark('zshy_diye') < 3 && player.storage.zshy_shenzhu_round !== game.roundNumber) {
+            if (event.cost_data != '选项三' && player.storage.zshy_shenzhu_round !== game.roundNumber) {
                 player.storage.zshy_shenzhu_round = game.roundNumber;
                 await player.addMark('zshy_diye', 1);
             }
@@ -239,7 +239,7 @@ const 光阴长河 = {
                         let skill = result.links;
                         player.addSkillLog(skill);
                         //收尸获得技能后获得「业」
-                        if (player.countMark('zshy_diye') < 3) await player.addMark('zshy_diye', 1);
+                        await player.addMark('zshy_diye', 1);
                     }
                 };
                 if (trigger.player.countCards('hej') > 0) {
