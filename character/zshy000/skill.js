@@ -167,9 +167,8 @@ const 光阴长河 = {
                 default:
                     break;
             }
-            //令其翻面或失去体力时获得「业」，每轮至多1枚
-            if (event.cost_data != '选项三' && player.storage.zshy_shenzhu_round !== game.roundNumber) {
-                player.storage.zshy_shenzhu_round = game.roundNumber;
+            //令其翻面或失去体力时获得「业」
+            if (event.cost_data != '选项三') {
                 await player.addMark('zshy_diye', 1);
             }
         },
