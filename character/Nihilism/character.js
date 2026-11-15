@@ -14,11 +14,8 @@ export const 远古遗神 = {
             `zshy_AJshenzun`, `zshy_AJxuwu`, `zshy_AJjinmie`, `zshy_AJhuanhun`,
         ],
         groupInGuozhan: `shen`,
-
         isZhugong: true,
-
         isAiForbidden: true,
-
         clans: [`虚无安氏`],
     },
     zshy_AAAAantianhen: {
@@ -30,11 +27,9 @@ export const 远古遗神 = {
         group: `shen`,
         doubleGroup: [],
         groupBorder: `shen`,
-        skills: [`zshy_AllSkill`, `zshy_AAAAkuiming`, `zshy_ATHmingying`],
+        skills: [`zshy_AllSkill`, `zshy_AAAAkuiming`, `zshy_ATHmingying`, `zshy_ATHdengshen`],
         groupInGuozhan: `shen`,
-
         isAiForbidden: true,
-
         clans: [`虚无安氏`],
     },
     zshy_AAAAmiehun: {
@@ -48,9 +43,7 @@ export const 远古遗神 = {
         groupBorder: `devil`,
         skills: [`zshy_AllSkill`, `zshy_MHxihun`],
         groupInGuozhan: `shen`,
-
         isAiForbidden: true,
-
     },
     zshy_AAAAzhongmo: {
         names: `盅|墨`,
@@ -61,11 +54,9 @@ export const 远古遗神 = {
         group: `shen`,
         doubleGroup: [],
         groupBorder: `qun`,
-        skills: [`zshy_AllSkill`, `zshy_ZMxuemo`],
+        skills: [`zshy_AllSkill`, `zshy_ZMxuemo`, `zshy_ZMluomo`, `zshy_ZMlinmo`],
         groupInGuozhan: `shen`,
-
         isAiForbidden: true,
-
     },
     zshy_AAAAzuilian: {
         names: `罪|恋`,
@@ -76,11 +67,9 @@ export const 远古遗神 = {
         group: `shen`,
         doubleGroup: [],
         groupBorder: `shu`,
-        skills: [`zshy_AllSkill`, `zshy_ZLyehuo`, `zshy_ZLfenzui`],
+        skills: [`zshy_AllSkill`, `zshy_ZLyehuo`, `zshy_ZLfenzui`, `zshy_ZLpanfa`],
         groupInGuozhan: `shen`,
-
         isAiForbidden: true,
-
     },
 };
 export const 江山多殇 = {
@@ -93,9 +82,8 @@ export const 江山多殇 = {
         group: `shen`,
         doubleGroup: [],
         groupBorder: `shen`,
-        skills: [`zshy_AAABSkill`, `zshy_ARjunwei`, `zshy_ARzuifa`],
+        skills: [`zshy_AAABSkill`, `zshy_ARjunwei`, `zshy_ARzuifa`, `zshy_ARrishi`],
         groupInGuozhan: `shen`,
-
     },
     zshy_AAABcanglan: {
         names: `苍|澜`,
@@ -108,7 +96,6 @@ export const 江山多殇 = {
         groupBorder: `qun`,
         doubleGroup: [],
         groupInGuozhan: `shen`,
-
     },
     zshy_AAABjinniuzuo: {
         names: `金牛|座`,
@@ -121,7 +108,6 @@ export const 江山多殇 = {
         groupBorder: `shen`,
         doubleGroup: [],
         groupInGuozhan: `shen`,
-
     },
     zshy_AAABlilimu: {
         names: `|莉莉姆`,
@@ -134,7 +120,6 @@ export const 江山多殇 = {
         groupBorder: `wu`,
         doubleGroup: [],
         groupInGuozhan: `shen`,
-
     },
 };
 export const 异界来客 = {
@@ -149,7 +134,6 @@ export const 异界来客 = {
         groupBorder: `wei`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
     },
     zshy_AAACguyuefangyuan: {
         names: `古月|方源`,
@@ -162,7 +146,6 @@ export const 异界来客 = {
         groupBorder: `devil`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
     },
     zshy_AAAClongyi: {
         names: `龙|裔`,
@@ -175,7 +158,6 @@ export const 异界来客 = {
         groupBorder: `qun`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
     },
     zshy_AAACsuxiao: {
         names: `苏|晓`,
@@ -188,7 +170,6 @@ export const 异界来客 = {
         groupBorder: `devil`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
     },
     zshy_AAACyangjian: {
         names: `杨|间`,
@@ -201,7 +182,6 @@ export const 异界来客 = {
         groupBorder: `devil`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
     },
     zshy_AAACyixiangren: {
         names: `异|乡人`,
@@ -214,7 +194,6 @@ export const 异界来客 = {
         groupBorder: `devil`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
     },
     zshy_AAAZtianxuanzhizi: {
         names: `天选|之子`,
@@ -227,7 +206,6 @@ export const 异界来客 = {
         groupBorder: `qun`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
     },
 };
 export const Vsinger = {
@@ -242,7 +220,6 @@ export const Vsinger = {
         groupBorder: `wei`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
         clans: [`Vsinger`],
     },
     zshy_AAADyanhe: {
@@ -256,7 +233,6 @@ export const Vsinger = {
         groupBorder: `qun`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
         clans: [`Vsinger`],
     },
     zshy_AAADyuezhengling: {
@@ -270,7 +246,6 @@ export const Vsinger = {
         groupBorder: `shu`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
         clans: [`Vsinger`],
     },
     //zshy_AAADyuezhenglongya: ['male', 'key', '4/4/0', ['', '', 'zshy_YZLYgongming', 'zshy_Vsingertianlai'], ['key', 'clan:Vsinger', 'border:wu']],
@@ -287,9 +262,7 @@ export const SlayTheSpire = {
         groupBorder: `wu`,
         doubleGroup: [],
         groupInGuozhan: `key`,
-
     },
-
 };
 
 export const characters = {

@@ -149,7 +149,10 @@ export function registerAnjing(player) {
     });
 }
 
-export async function restoreAnjing(player) {
+const restoring = new WeakSet();
+
+// 恢复过程中 turnOver/link 等事件会再次命中〖唤魂〗，重入时跳过，避免同一次恢复反复嵌套。
+async function restoreAnjingNow(player) {
     registerAnjing(player);
     protectAnjing(player);
     const pairs = expectedPairs(player);
@@ -183,6 +186,16 @@ export async function restoreAnjing(player) {
     }
     protectAnjing(player);
     player.update();
+}
+
+export async function restoreAnjing(player) {
+    if (restoring.has(player)) return;
+    restoring.add(player);
+    try {
+        await restoreAnjingNow(player);
+    } finally {
+        restoring.delete(player);
+    }
 }
 
 export async function chooseAnjingDeputy(player, replacing = false) {
@@ -370,6 +383,8 @@ export async function enterAnjing(player) {
     if (player.storage.zshyAnjingEntered || player.storage.zshyAnjingEntering) return;
     player.storage.zshyAnjingEntering = true;
     try {
+        // 描述顺序：先固定主将、废除判定区，再选择副将，选完再恢复一次补上副将技能。
+        await restoreAnjing(player);
         await chooseAnjingDeputy(player);
         await restoreAnjing(player);
         player.storage.zshyAnjingEntered = true;

@@ -1,5 +1,5 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
-import { registerAnjing, isAnjing, restoreAnjing, enterAnjing, rescueAnjing, insertAnjingPhase, kuimingEffect, chooseKuimingTargets, sameCamp, unifiedWith, convertToAnjing, finishAnjingVictory, xuwuCards } from './anjing.js';
+import { registerAnjing, isAnjing, restoreAnjing, enterAnjing, rescueAnjing, insertAnjingPhase, restoreKuimingOwner, kuimingEffect, chooseKuimingTargets, sameCamp, unifiedWith, convertToAnjing, finishAnjingVictory, xuwuCards } from './anjing.js';
 //新版引擎的lib.character[i]是Character对象（没有数组下标4），旧版是六段数组。
 //Character的[4]是Proxy getter，每读一次都要重建整个trash数组，遍历时绝不能反复读。
 const NihilismCharacterFlags = character => {
@@ -24,6 +24,7 @@ const NihilismSkillList = character => {
     if (Array.isArray(character)) return character[3] || [];
     return character.skills || [];
 };
+//以下三个小工具由百变 / 戏魂 / 削强共用，保留在模块级；单技能私有逻辑一律写回技能内部。
 const 远古遗神 = {
     //百变
     zshy_baibian: {//百变
@@ -125,20 +126,13 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         superCharlotte: true,
         NihilismSkill: true,
-        forceunique: true,
-        noDisabled: true,
         charlotte: true,
-        noDeprive: true,
         nobracket: true,
         ruleSkill: true,
-        noRemove: true,
         forceDie: true,
         firstDo: true,
-        noLose: true,
-        noGain: true,
         unique: true,
         locked: true,
-        noAdd: true,
         fixed: true,
         priority: Infinity,
         init(player) {
@@ -163,10 +157,16 @@ const 远古遗神 = {
         trigger: {
             global: ['dieBefore', 'roundStart', 'changeHpBefore', 'damageBefore', 'loseHpBefore', 'recoverBefore', 'gainMaxHpBefore', 'loseMaxHpBefore'],
         },
+        filter(event, player, name) {
+            // damage/recover/loseHp 结算内部都会再走 changeHp，同一次结算只提示一次。
+            if (name !== 'changeHpBefore') return true;
+            const parent = event.getParent?.();
+            return !parent || !['damage', 'recover', 'loseHp'].includes(parent.name);
+        },
         async cost(event, trigger, player) {
             event.result = await player.chooseBool()
-                .set('prompt', get.translation(event.skill))
-                .set('prompt2', '是否立即插入并执行一个出牌阶段？')
+                .set('prompt', get.prompt(event.skill))
+                .set('prompt2', '立即插入并执行一个出牌阶段')
                 .set('ai', function () {
                     // 真人仍可无限嵌套；托管在已插入阶段内默认不继续套娃。
                     return !get.event().getParent('phaseUse')?._zshyAnjingInserted;
@@ -176,6 +176,8 @@ const 远古遗神 = {
             await insertAnjingPhase(player);
         },
         ai: {
+            nogain: true,
+            nolose: true,
             //本身就是最高威胁：所有 AI 都应该优先处理
             threaten: 2,
         },
@@ -184,20 +186,13 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         superCharlotte: true,
         NihilismSkill: true,
-        forceunique: true,
-        noDisabled: true,
         charlotte: true,
-        noDeprive: true,
         nobracket: true,
         ruleSkill: true,
-        noRemove: true,
         forceDie: true,
         firstDo: true,
-        noLose: true,
-        noGain: true,
         unique: true,
         forced: true,
-        noAdd: true,
         fixed: true,
         priority: Infinity,
         enable: ['chooseToUse', 'chooseToRespond'],
@@ -224,6 +219,10 @@ const 远古遗神 = {
             },
             backup(links, player) {
                 return {
+                    // 本体给 viewAs 的 filterCard 套的包装会先问 game.checkMod(..., "cardEnabled2")，
+                    // 安璟的 cardEnabled2 恒真会让 filterCard 直接失效；叠加 selectCard:-1（本体语义为
+                    // 自动选中全部可选牌），选完牌名后所有手牌会被选中并随虚拟牌打出（gameEvent.js:757-772）。
+                    ignoreMod: true,
                     filterCard() { return false },
                     selectCard: -1,
                     viewAs: {
@@ -267,6 +266,8 @@ const 远古遗神 = {
             },
         },
         ai: {
+            nogain: true,
+            nolose: true,
             //可视为使用任意牌，AI 永远优先走〖虚无〗，用 Infinity 表达“最高优先”
             order: Infinity,
             noh: true,
@@ -287,20 +288,14 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         superCharlotte: true,
         NihilismSkill: true,
-        forceunique: true,
-        noDisabled: true,
         charlotte: true,
-        noDeprive: true,
         nobracket: true,
         ruleSkill: true,
-        noRemove: true,
         forceDie: true,
         firstDo: true,
-        noLose: true,
-        noGain: true,
+        ai: { nogain: true, nolose: true },
         unique: true,
         locked: true,
-        noAdd: true,
         fixed: true,
         priority: Infinity,
         trigger: {
@@ -327,26 +322,20 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         superCharlotte: true,
         NihilismSkill: true,
-        forceunique: true,
-        noDisabled: true,
         charlotte: true,
-        noDeprive: true,
         nobracket: true,
         ruleSkill: true,
-        noRemove: true,
         forceDie: true,
         firstDo: true,
-        noLose: true,
-        noGain: true,
+        ai: { nogain: true, nolose: true },
         unique: true,
         forced: true,
-        noAdd: true,
         fixed: true,
         popup: false,
         priority: Infinity,
         forceOut: true,
         trigger: {
-            global: ['phaseBefore', 'phaseAnyBefore'],
+            global: ['phaseAnyBefore'],
             player: ['dieBefore', 'dyingBefore', 'turnOverAfter', 'linkAfter', 'changeCharacterAfter', 'rest'],
         },
         filter(event, player, name) {
@@ -364,20 +353,14 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         superCharlotte: true,
         NihilismSkill: true,
-        forceunique: true,
-        noDisabled: true,
         charlotte: true,
-        noDeprive: true,
         nobracket: true,
         ruleSkill: true,
-        noRemove: true,
         forceDie: true,
         firstDo: true,
-        noLose: true,
-        noGain: true,
+        ai: { nogain: true, nolose: true },
         unique: true,
         locked: true,
-        noAdd: true,
         fixed: true,
         priority: Infinity,
     },
@@ -385,20 +368,14 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         superCharlotte: true,
         NihilismSkill: true,
-        forceunique: true,
-        noDisabled: true,
         charlotte: true,
-        noDeprive: true,
         nobracket: true,
         ruleSkill: true,
-        noRemove: true,
         forceDie: true,
         firstDo: true,
-        noLose: true,
-        noGain: true,
+        ai: { nogain: true, nolose: true },
         unique: true,
         locked: true,
-        noAdd: true,
         fixed: true,
         priority: Infinity,
     },
@@ -406,20 +383,14 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         superCharlotte: true,
         NihilismSkill: true,
-        forceunique: true,
-        noDisabled: true,
         charlotte: true,
-        noDeprive: true,
         nobracket: true,
         ruleSkill: true,
-        noRemove: true,
         forceDie: true,
         firstDo: true,
-        noLose: true,
-        noGain: true,
+        ai: { nogain: true, nolose: true },
         unique: true,
         locked: true,
-        noAdd: true,
         fixed: true,
         priority: Infinity,
     },
@@ -427,25 +398,20 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         superCharlotte: true,
         NihilismSkill: true,
-        forceunique: true,
-        noDisabled: true,
         charlotte: true,
-        noDeprive: true,
         nobracket: true,
         ruleSkill: true,
-        noRemove: true,
         forceDie: true,
         firstDo: true,
-        noLose: true,
-        noGain: true,
+        ai: { nogain: true, nolose: true },
         unique: true,
         locked: true,
-        noAdd: true,
         fixed: true,
         priority: Infinity,
     },
 
-    zshy_AllSkill: {//神祇
+    //安天痕
+    zshy_AllSkill: {//神选
         NihilismSkill: true,
         forced: true,
         async init(player) {
@@ -453,15 +419,23 @@ const 远古遗神 = {
                 await player.disableJudge();
             };
         },
+        // ②按“其他角色使用牌指定你为目标”触发；套娃只由“可使用一张牌”这一句限制：其没有〖神选〗才可出牌。
         trigger: {
-            global: ['useCard', 'respond'],
+            target: 'useCardToTargeted',
         },
         filter(event, player) {
-            return event.player != player;
+            return event.player !== player;
         },
         async content(event, trigger, player) {
             await player.chooseDrawRecover(true);
-            await player.chooseToUse();
+            if (!trigger.player.hasSkill('zshy_AllSkill')) {
+                await player.chooseToUse().set('prompt', '【神选】：可使用一张牌').set('ai1', card => {
+                    //托管：桃/闪/无懈这类防守牌不用；其余按正常使用价值挑收益最高的。
+                    if (!card || typeof card === 'string') return -1;
+                    if (['tao', 'shan', 'wuxie'].includes(get.name(card))) return -1;
+                    return get.order(card, player);
+                });
+            }
         },
         mod: {
             targetInRange() {
@@ -491,10 +465,7 @@ const 远古遗神 = {
                 },
             },
         },
-
     },
-
-    //安天痕
     zshy_AAAAkuiming: {//馈命
         audio: 'ext:诸神寰宇/audio/character:2',
         NihilismSkill: true,
@@ -502,6 +473,8 @@ const 远古遗神 = {
         trigger: { player: 'dieBefore' },
         async content(event, trigger, player) {
             trigger.cancel(isAnjing(player) ? false : undefined);
+            // 描述顺序：先防止死亡并把体力与体力上限调整为1，再选择其他角色调整其体力上限。
+            await restoreKuimingOwner(player);
             const targets = await chooseKuimingTargets(player);
             await kuimingEffect(player, targets);
         },
@@ -523,20 +496,45 @@ const 远古遗神 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         NihilismSkill: true,
         forced: true,
+        // ①按「其他角色的体力值/体力上限变化」触发；镜像自伤只在体力值减少时发生，并给伤害打标记防止多持有者互触。
         trigger: {
-            global: ['damageAfter', 'loseHpAfter', 'gainMaxHpAfter'],
+            global: ['changeHpAfter', 'gainMaxHpAfter', 'loseMaxHpAfter'],
         },
         filter(event, player) {
-            return event.player !== player && event.num > 0;
+            if (event.player === player) return false;
+            if (event.name === 'changeHp') {
+                // 自己的镜像自伤（伤害事件带标记）不再反向触发，避免双持有者/自伤互触。
+                if (event.getParent?.()?._zshyMingying) return false;
+                return Math.abs(Number(event.num) || 0) > 0;
+            }
+            return (Number(event.num) || 0) > 0;
         },
         async content(event, trigger, player) {
-            if (trigger.name === 'gainMaxHp') {
-                await player.gainMaxHp(trigger.num);
-                return;
+            //工具函数写在技能内部，避免在 skill.js 顶部散落武将专用函数。
+            const mark = 'zshy_ATHmingying_ying';
+            const total = 'zshy_ATHyingTotal';
+            const gainYing = num => {
+                player.addMark(mark, num);
+                player.storage[total] = (Number(player.storage[total]) || 0) + num;
+            };
+            //觉醒时机为获得「影」后；走 useSkill 才有本体觉醒技的动画/日志/语音。
+            const tryAwaken = async () => {
+                if (!player.hasSkill('zshy_ATHdengshen')) return;
+                if (player.hasSkill('zshy_ATHtiying')) return;
+                if ((Number(player.storage[total]) || 0) < 6) return;
+                await player.useSkill('zshy_ATHdengshen');
+            };
+            const num = Number(trigger.num) || 0;
+            const amount = Math.abs(num);
+            if (amount < 1) return;
+            gainYing(amount);
+            await tryAwaken();
+            //体力值减少才镜像承受等量无来源伤害；回复与体力上限变化只给「影」（上限变化不自伤，避免与〖馈命〗互相循环）。
+            if (trigger.name === 'changeHp' && num < 0) {
+                const damage = player.damage(amount, 'nosource', 'nocard');
+                damage._zshyMingying = true;
+                await damage;
             }
-            // 伤害或失去体力：先获得等量「影」，再承受等量无来源普通伤害。
-            player.addMark('zshy_ATHmingying_ying', trigger.num);
-            await player.damage(trigger.num, 'nosource', 'nocard');
         },
         // ③拆为子技能；可移去任意枚，不设每回合次数。
         group: 'zshy_ATHmingying_yingyong',
@@ -546,7 +544,7 @@ const 远古遗神 = {
                 mark: true,
                 charlotte: true,
                 intro: {
-                    content: '其他角色受到伤害或失去体力后获得等量「影」；出牌阶段可移去任意枚「影」，令一名角色摸等量牌、回复等量体力，或对一名其他角色造成等量普通伤害。',
+                    content: '其他角色的体力值或体力上限变化后获得等量「影」，体力值减少时承受等量伤害；出牌阶段可移去任意枚「影」，令一名角色摸等量牌、回复等量体力，或对一名其他角色造成等量伤害。',
                 },
             },
             yingyong: {
@@ -558,22 +556,27 @@ const 远古遗神 = {
                 check(event, player) {
                     return true;
                 },
-                prompt: '出牌阶段，你可移去任意枚「影」，然后选择一项：令一名角色摸等量的牌；令一名角色回复等量体力；对一名其他角色造成等量普通伤害',
+                prompt: '出牌阶段，你可移去任意枚「影」，然后选择一项：令一名角色摸等量的牌；令一名角色回复等量体力；对一名其他角色造成等量伤害',
                 async content(event, trigger, player) {
                     const mark = 'zshy_ATHmingying_ying';
                     const count = player.countMark(mark);
                     if (count < 1) return;
-                    const amounts = [];
-                    for (let i = 1; i <= count; i++) amounts.push(`移去${i}枚`);
-                    let amount = 1;
-                    if (count > 1) {
-                        const picked = await player.chooseControl(amounts)
-                            .set('prompt', '【命影】：选择移去的「影」数量')
-                            .set('ai', () => amounts[count - 1]).forResult();
-                        const index = amounts.indexOf(picked?.control);
-                        if (index < 0) return;
-                        amount = index + 1;
-                    }
+                    const numberResult = await player
+                        //子技能的 event.skill 是 zshy_ATHmingying_yingyong，取提示文本要用母技能 id
+                        .chooseNumbers(get.prompt('zshy_ATHmingying'), [
+                            {
+                                prompt: '选择移去的「影」数量',
+                                min: 1,
+                                max: count,
+                            },
+                        ])
+                        .set('processAI', () => {
+                            // 「影」只用于本项，越多收益越高：AI 默认全部移去
+                            return [count];
+                        })
+                        .forResult();
+                    const amount = numberResult?.numbers?.[0];
+                    if (!amount || amount < 1) return;
                     const options = ['摸牌', '回复体力', '造成伤害'];
                     const picked = await player.chooseControl(options)
                         .set('prompt', `【命影】：移去${amount}枚「影」，选择一项`)
@@ -585,7 +588,7 @@ const 远古遗神 = {
                     const option = picked?.control;
                     if (!options.includes(option)) return;
                     const prompt = option === '造成伤害'
-                        ? `【命影】：选择一名其他角色，对其造成${amount}点普通伤害`
+                        ? `【命影】：选择一名其他角色，对其造成${amount}点伤害`
                         : `【命影】：选择一名角色，令其${option === '摸牌' ? `摸${amount}张牌` : `回复${amount}点体力`}`;
                     const result = await player.chooseTarget(prompt, [1, 1], (card, player, target) => {
                         if (!target || (target.isIn && !target.isIn())) return false;
@@ -623,51 +626,322 @@ const 远古遗神 = {
             },
         },
     },
+    zshy_ATHdengshen: {//登神
+        audio: 'ext:诸神寰宇/audio/character:2',
+        juexingji: true,
+        //觉醒技授予的固定技能（与 zshy001 觉醒技写法一致）
+        derivation: ['zshy_ATHtiying'],
+        skillAnimation: true,
+        animationColor: 'thunder',
+        forced: true,
+        // 觉醒时机为「获得影后」：由〖命影〗获得「影」时走 useSkill 调用本技能（带觉醒特效）。
+        async content(event, trigger, player) {
+            player.awakenSkill('zshy_ATHdengshen');
+            const count = player.countMark('zshy_ATHmingying_ying');
+            if (count > 0) player.removeMark('zshy_ATHmingying_ying', count);
+            player.addSkill('zshy_ATHtiying');
+            player.update();
+        },
+    },
+    zshy_ATHtiying: {//替影
+        audio: 'ext:诸神寰宇/audio/character:2',
+        //替影自用工具（技能对象上的自定义字段，引擎忽略）：X值、可用牌筛选、目标选择都写在本技能内。
+        tools: (() => {
+            const limit = target => {
+                let max = target.maxHp - target.hp + 1;
+                if (!Number.isFinite(max)) max = 1;
+                return Math.max(1, Math.floor(max));
+            };
+            const usable = (target, event) => {
+                return target.getCards('h').filter(card => {
+                    try {
+                        if (!lib.filter.cardEnabled(card, target, event)) return false;
+                        if (!lib.filter.cardUsable(card, target, event)) return false;
+                        // updateUsable === 'phaseUse' 的牌（【杀】等）在引擎里按父级 phaseUse 事件判次数；
+                        // 此处没有合法父事件，改为手动按「本出牌阶段已用次数」校验，避免次数用完仍能替出。
+                        const info = get.info(card) || {};
+                        if (info.updateUsable === 'phaseUse') {
+                            const card2 = get.autoViewAs ? get.autoViewAs(card) : card;
+                            let num = info.usable;
+                            if (typeof num === 'function') num = num(card2, target);
+                            num = game.checkMod(card2, target, num, 'cardUsable', target);
+                            if (typeof num === 'number' && target.countUsed(card2) >= num) return false;
+                        }
+                        return true;
+                    } catch (e) {
+                        return false;
+                    }
+                });
+            };
+            //由安天痕替出牌者决定牌的目标；无合法目标时返回 null 表示不能使用该牌。
+            const chooseTargets = async (chooser, user, card) => {
+                const info = get.info(card) || {};
+                if (info.notarget) return [];
+                let range;
+                if (typeof info.selectTarget === 'function') range = info.selectTarget(card, user);
+                else if (typeof info.selectTarget === 'number') range = [info.selectTarget, info.selectTarget];
+                else if (Array.isArray(info.selectTarget)) range = info.selectTarget.slice();
+                else range = info.filterTarget == null ? [0, 0] : [1, 1];
+                if (typeof range === 'number') range = [range, range];
+                if (!range) range = [0, 0];
+                game.checkMod(card, user, range, 'selectTarget', user);
+                const upper = range[1] === -1 ? Infinity : Number(range[1]);
+                if (!upper || upper <= 0) return [];
+                const candidates = game.players.filter(target => lib.filter.targetEnabled2(card, user, target));
+                if (!candidates.length) return Number(range[0]) > 0 ? null : [];
+                const max = Math.min(upper, candidates.length);
+                const min = Math.max(1, Math.min(Number(range[0]) || 1, max));
+                const result = await chooser.chooseTarget(
+                    `【替影】：为${get.translation(user)}的${get.translation(card)}选择目标`,
+                    [min, max],
+                    (card2, player, target) => lib.filter.targetEnabled2(card, user, target)
+                ).set('ai', target => (target ? get.effect_use(target, card, user, chooser) : 0)).forResult();
+                const targets = result?.targets || [];
+                return targets.length ? targets : null;
+            };
+            //AI 估值：这张牌由 user 替出时，安天痕（chooser）视角下的最佳收益。
+            const score = (card, user, chooser) => {
+                const info = get.info(card) || {};
+                if (info.notarget) return get.effect_use(user, card, user, chooser);
+                const candidates = game.players.filter(target => lib.filter.targetEnabled2(card, user, target));
+                if (!candidates.length) return 0;
+                let best = -Infinity;
+                for (const target of candidates) {
+                    best = Math.max(best, get.effect_use(target, card, user, chooser));
+                }
+                return Number.isFinite(best) ? best : 0;
+            };
+            return { limit, usable, score, chooseTargets };
+        })(),
+        trigger: { global: 'phaseUseBegin' },
+        filter(event, player) {
+            const target = event.player;
+            return target && target !== player && target.isIn() && target.countCards('h') > 0;
+        },
+        // 「你可」：可选发动；AI 按最佳收益决定是否发动，不再固定关闭。
+        async cost(event, trigger, player) {
+            const { limit, usable, score } = get.info('zshy_ATHtiying').tools;
+            const target = trigger.player;
+            if (!usable(target, trigger).length) {
+                event.result = { bool: false };
+                return;
+            }
+            event.result = await player.chooseBool()
+                .set('prompt', `【替影】：是否观看${get.translation(target)}的手牌，并替其使用至多${get.cnNumber(limit(target))}张牌？`)
+                .set('ai', () => usable(target, trigger).some(card => score(card, target, player) > 0))
+                .forResult();
+        },
+        async content(event, trigger, player) {
+            const { limit, usable, score, chooseTargets } = get.info('zshy_ATHtiying').tools;
+            const target = trigger.player;
+            const max = limit(target);
+            // 观看其手牌（正面，仅发动者可见）
+            const hand = target.getCards('h');
+            if (hand.length) await player.viewCards(`【替影】：观看${get.translation(target)}的手牌`, hand);
+            for (let i = 0; i < max; i++) {
+                if (!target.isIn()) break;
+                const cards = usable(target, trigger);
+                if (!cards.length) break;
+                // 只能从「当前可以使用」的牌里选（不可使用的牌只在观看窗口里展示）
+                const picked = await player.chooseButton([
+                    `【替影】：选择替${get.translation(target)}使用的第${i + 1}张牌（至多${get.cnNumber(max)}张）`,
+                    [cards.slice(), 'vcard'],
+                ], [1, 1], false).set('ai', button => score(button.link, target, player)).forResult();
+                const card = picked?.links?.[0];
+                if (!card) break;
+                const targets = await chooseTargets(player, target, card);
+                if (targets === null) break;
+                await target.useCard(card, [card], targets);
+            }
+        },
+    },
 
     //灭魂
     zshy_MHxihun: {//戏魂
         audio: 'ext:诸神寰宇/audio/character:2',
+        //戏魂自用的「幕」系统（技能对象上的自定义字段，引擎只读已知字段）：戏目池、选择、谢幕结算与换将重入保护都在这里。
+        tools: (() => {
+            //〖戏魂〗的传说品质副将牌：随机展示至多三名已加载的传说武将，由玩家选择一名（AI 按技能评级与体力评分），避免换到不存在的武将。
+            const chooseLegendGeneral = async (player, prompt) => {
+                const pool = (lib.rank?.rarity?.legend || []).filter(name => lib.character[name]);
+                if (!pool.length) return null;
+                const names = pool.randomGets(3);
+                if (names.length === 1) return names[0];
+                const result = await player.chooseButton([prompt, [names, 'character']], true).set('ai', button => {
+                    const info = lib.character[button.link];
+                    if (!info || !info.skills || !info.skills.length) return 0;
+                    return info.skills.reduce((sum, skill) => sum + get.skillRank(skill, 'in') + get.skillRank(skill, 'out'), 0) + (info.hp || 0);
+                }).forResult();
+                const picked = result?.links?.[0];
+                return picked && names.includes(picked) ? picked : names.randomGet();
+            };
+            //〖戏魂〗「戏目」池：按触发时机分登场/演出/谢幕三块，每次死亡时从当前技能池实时构建。
+            const dramaTriggerNames = info => {
+                const names = [];
+                for (const key of Object.keys(info.trigger || {})) {
+                    const value = info.trigger[key];
+                    if (Array.isArray(value)) names.push(...value.filter(name => typeof name === 'string'));
+                    else if (typeof value === 'string') names.push(value);
+                }
+                return names;
+            };
+            const dramaBlockOf = info => {
+                const names = dramaTriggerNames(info);
+                if (names.includes('enterGame')) return 'enter';
+                if (!names.length) return info.mod ? 'play' : null;
+                if (names.some(name => name.startsWith('die') || name.startsWith('dying') || name.startsWith('rest') || name === 'out' || name.startsWith('out'))) return 'exit';
+                //纯 gameStart 技能在重新登场时不会触发，放进池里等于空奖励。
+                if (names.includes('gameStart')) return null;
+                return 'play';
+            };
+            const dramaSkillPools = player => {
+                const pools = { enter: [], play: [], exit: [] };
+                const seen = new Set();
+                for (const character in lib.character) {
+                    if (NihilismShouldSkipCharacter(lib.character[character])) continue;
+                    for (const skill of NihilismSkillList(lib.character[character])) {
+                        if (seen.has(skill)) continue;
+                        seen.add(skill);
+                        if (player.hasSkill(skill)) continue;
+                        const info = lib.skill[skill];
+                        if (!info || info.silent || info.NihilismSkill) continue;
+                        if (!lib.translate[skill] || !lib.translate[skill + '_info']) continue;
+                        if (info.sub || info.charlotte || info.superCharlotte || info.fixed) continue;
+                        if (info.unique || info.limited || info.juexingji || info.zhuSkill || info.ruleSkill || info.equipSkill) continue;
+                        if (info.enable || info.viewAs) continue;
+                        const block = dramaBlockOf(info);
+                        if (block) pools[block].push(skill);
+                    }
+                }
+                return pools;
+            };
+            const dramaFallback = {
+                enter: '摸两张牌',
+                play: '回复1点体力并摸一张牌',
+            };
+            const dramaPickScore = skill => get.skillRank(skill, 'in') + get.skillRank(skill, 'out') + 1;
+            //从某一块随机展示至多三张候选，选一张永久获得；无候选时改用兜底效果。
+            const chooseDrama = async (player, block, prompt) => {
+                const names = dramaSkillPools(player)[block].randomGets(3);
+                if (!names.length) return { block, fallback: dramaFallback[block] };
+                if (names.length === 1) return { block, skill: names[0] };
+                const list = names.map((skill, index) => [String(index), `<div class="popup text" style="width:calc(100%-10px);display:inline-block"><div class="skill">【${get.translation(skill)}】</div><div>${lib.translate[skill + '_info'] || ''}</div></div>`]);
+                const result = await player.chooseButton([prompt, [list, 'textbutton']], true).set('ai', button => {
+                    const skill = names[Number(button.link)];
+                    return skill ? dramaPickScore(skill) : 0;
+                }).forResult();
+                const skill = names[Number(result?.links?.[0])] || names.randomGet();
+                return { block, skill };
+            };
+            const resolveDramaFallback = async (player, block) => {
+                if (block === 'enter') {
+                    await player.draw(2);
+                } else {
+                    await player.recover(1);
+                    await player.draw(1);
+                }
+            };
+            //谢幕：自上次登场以来演出过才可选择体力上限压制，否则只能替换副将牌。
+            const doCurtain = async (player, performed) => {
+                let mode = '替换副将牌';
+                if (performed) {
+                    const picked = await player.chooseControl(['替换副将牌', '执行谢幕'])
+                        .set('prompt', '【戏魂】：选择「谢幕」的方式')
+                        .set('ai', () => {
+                            const others = game.filterPlayer(current => current !== player);
+                            return others.some(current => current.hp <= 1) || others.length >= 2 ? '执行谢幕' : '替换副将牌';
+                        }).forResult();
+                    if (picked?.control === '执行谢幕') mode = '执行谢幕';
+                }
+                if (mode === '执行谢幕') {
+                    for (const target of game.filterPlayer(function (current) {
+                        return current != player;
+                    }).sortBySeat()) {
+                        const num = Math.max(0, target.hp - 1);
+                        if (target.maxHp > num) await target.loseMaxHp(target.maxHp - num);
+                        else if (target.maxHp < num) await target.gainMaxHp(num - target.maxHp);
+                    }
+                    return '体力上限压制';
+                }
+                const legend = await chooseLegendGeneral(player, '【戏魂】：选择一张传说品质的武将牌替换副将');
+                if (legend) {
+                    const pairs = ['zshy_AAAAmiehun', legend];
+                    const current = [player.name1, player.name2].filter(Boolean);
+                    if (current.join('|') !== pairs.join('|')) await player.changeCharacter(pairs);
+                }
+                return '替换副将牌';
+            };
+            return { chooseLegendGeneral, chooseDrama, resolveDramaFallback, doCurtain };
+        })(),
         NihilismSkill: true,
         forced: true,
-        async init(player) {
-            const first = player.name1, second = lib.rank.rarity.legend.randomGet();
-            lib.element.player.uninit.call(player);
-            lib.element.player.init.call(player, first, second);
-        },
+        //①按描述在登场后执行：init 钩子会嵌在本体 player.init 内，不能用来换将；改由 gameStart/enterGame 触发。
+        group: 'zshy_MHxihun_enter',
         trigger: { player: 'dieBegin' },
         async content(event, trigger, player) {
+            const { chooseDrama, resolveDramaFallback, doCurtain } = get.info('zshy_MHxihun').tools;
             trigger.cancel();
-            if (!player.isAlive()) {
-                await player.revive();
-                game.addVideo('revive', player);
-                event.dead = player;
-            };
-            const first = 'zshy_AAAAmiehun', second = lib.rank.rarity.legend.randomGet();
-            lib.element.player.uninit.call(player);
-            lib.element.player.init.call(player, first, second);
-            player.maxHp = 1;
-            player.hp = 1;
-            await player.update();
-            const targets = game.filterPlayer(function (target) {
-                return target != player;
-            }).sortBySeat()
-            for (const i of targets) {
-                const num = Math.max(0, i.hp - 1);
-                if (i.maxHp !== num) {
-                    if (i.maxHp > num) await i.loseMaxHp(i.maxHp - num);
-                    else await i.gainMaxHp(num - i.maxHp);
-                    if (i.hp > i.maxHp) i.hp = i.maxHp;
+            //重入保护：changeCharacter/changeSkills 会再次命中本技能，同一轮直接返回（存 player.storage，避免把 WeakSet 放进被冻结保护的技能定义里）。
+            if (player.storage.zshy_MHxihun_restoring) return;
+            player.storage.zshy_MHxihun_restoring = true;
+            try {
+                player.storage.zshy_MHxihun_entered = true;
+                player.addMark('zshy_MHxihun_mu', 1);
+                const act = player.countMark('zshy_MHxihun_mu');
+                const record = { act, stage: '', detail: '' };
+                const open = player.storage.zshy_MHxihun_stage === 'open';
+                if (!open) {
+                    //登场：首次或上一幕谢幕后，必须先重新登场
+                    const pick = await chooseDrama(player, 'enter', '【戏魂】：选择一张「登场」戏目永久获得');
+                    if (pick.skill) {
+                        await player.addSkillLog(pick.skill);
+                        record.detail = get.translation(pick.skill);
+                    } else {
+                        await resolveDramaFallback(player, 'enter');
+                        record.detail = pick.fallback;
+                    }
+                    record.stage = '登场';
+                    player.storage.zshy_MHxihun_stage = 'open';
+                    player.storage.zshy_MHxihun_performed = false;
+                    await restoreKuimingOwner(player);
+                    await game.triggerEnter(player);
+                } else {
+                    const path = await player.chooseControl(['演出', '谢幕'])
+                        .set('prompt', '【戏魂】：选择「演出」或「谢幕」')
+                        .set('ai', () => {
+                            const performed = !!player.storage.zshy_MHxihun_performed;
+                            const others = game.filterPlayer(current => current !== player);
+                            return performed && (others.some(current => current.hp <= 1) || others.length >= 2) ? '谢幕' : '演出';
+                        }).forResult();
+                    if (path?.control === '谢幕') {
+                        const performed = !!player.storage.zshy_MHxihun_performed;
+                        record.stage = '谢幕';
+                        record.detail = await doCurtain(player, performed);
+                        player.storage.zshy_MHxihun_stage = 'closed';
+                        player.storage.zshy_MHxihun_performed = false;
+                        await restoreKuimingOwner(player);
+                    } else {
+                        const pick = await chooseDrama(player, 'play', '【戏魂】：选择一张「演出」戏目永久获得');
+                        if (pick.skill) {
+                            await player.addSkillLog(pick.skill);
+                            record.detail = get.translation(pick.skill);
+                        } else {
+                            await resolveDramaFallback(player, 'play');
+                            record.detail = pick.fallback;
+                        }
+                        record.stage = '演出';
+                        player.storage.zshy_MHxihun_performed = true;
+                        await restoreKuimingOwner(player);
+                    }
                 }
-                await i.update();
-                if (i.maxHp <= 0) {
-                    event._dyinged = true;
-                    await i.dying(event);
-                }
-            };
+                const summary = `第${act}幕：${record.stage}·${record.detail}`;
+                player.storage.zshy_MHxihun_acts = (player.storage.zshy_MHxihun_acts || []).concat(summary);
+                game.log(player, '记录', '#g' + summary);
+            } finally {
+                delete player.storage.zshy_MHxihun_restoring;
+            }
             await game.delay();
-            const next = player.phaseUse();
-            event.next.remove(next);
-            trigger.next.push(next);
+            await player.phaseUse();
         },
         ai: {
             maixie: true,
@@ -677,8 +951,60 @@ const 远古遗神 = {
                     if (get.tag(card, 'save') || get.tag(card, 'recover')) return `zeroplayertarget`;
                 },
                 player(card, player, target) {
-                    if (get.tag(card, 'save') || get.tag(card, 'recover')) return `zeroplayertarget`;
+                    //只有把救援/回复牌用在自己身上才没有意义；救队友按正常收益评估。
+                    if (target === player && (get.tag(card, 'save') || get.tag(card, 'recover'))) return 'zeroplayer';
                 }
+            },
+        },
+        subSkill: {
+            enter: {
+                trigger: { global: 'gameStart', player: 'enterGame' },
+                forced: true,
+                filter(event, player) {
+                    if (player.storage.zshy_MHxihun_entered) return false;
+                    return [player.name1, player.name2].includes('zshy_AAAAmiehun');
+                },
+                async content(event, trigger, player) {
+                    const { chooseLegendGeneral } = get.info('zshy_MHxihun').tools;
+                    if (player.storage.zshy_MHxihun_restoring) return;
+                    player.storage.zshy_MHxihun_restoring = true;
+                    try {
+                        player.storage.zshy_MHxihun_entered = true;
+                        const legend = await chooseLegendGeneral(player, '【戏魂】：选择一张传说品质的武将牌作为副将');
+                        if (!legend) return;
+                        const pairs = ['zshy_AAAAmiehun', legend];
+                        const current = [player.name1, player.name2].filter(Boolean);
+                        if (current.join('|') === pairs.join('|')) return;
+                        await player.changeCharacter(pairs);
+                        //①与旧实现保持一致：登场换副将后回到满体力。
+                        player.hp = player.maxHp;
+                        await player.update();
+                    } finally {
+                        delete player.storage.zshy_MHxihun_restoring;
+                    }
+                },
+            },
+            mu: {
+                name: '幕',
+                mark: true,
+                charlotte: true,
+                intro: {
+                    //标记内容在点开时实时渲染，不需要改动被保护的技能定义。
+                    content(storage, player) {
+                        const acts = player.storage.zshy_MHxihun_acts || [];
+                        let stage;
+                        if (player.storage.zshy_MHxihun_stage !== 'open') stage = '未开戏（下一幕必须登场）';
+                        else if (player.storage.zshy_MHxihun_performed) stage = '演出中（可继续演出或谢幕）';
+                        else stage = '已登场（可演出或谢幕）';
+                        const lines = [`当前：${stage}`];
+                        if (acts.length) {
+                            lines.push('—— 戏幕记录 ——');
+                            lines.push(...acts.slice(-10));
+                            if (acts.length > 10) lines.push(`（仅显示最近10幕，共${acts.length}幕）`);
+                        }
+                        return lines.join('<br>');
+                    },
+                },
             },
         },
     },
@@ -686,84 +1012,138 @@ const 远古遗神 = {
     //盅墨
     zshy_ZMxuemo: {//血墨
         audio: 'ext:诸神寰宇/audio/character:2',
+        //血墨自用的「墨」体系（技能对象上的自定义字段，引擎只读已知字段）：标记、可夺技能与死亡选项都在这里。
+        tools: (() => {
+            const MO = 'zshy_ZMxuemo_mo';
+            const inkCount = target => target.countMark(MO);
+            //可从目标身上夺走的技能：排除隐藏技/子技能与你已经拥有的技能。
+            const stealable = (player, target) => target.getSkills().filter(skill => {
+                const info = lib.skill[skill];
+                if (!info || !lib.translate[skill] || !lib.translate[skill + '_info']) return false;
+                if (info.sub || info.charlotte) return false;
+                return !player.hasSkill(skill);
+            });
+            //可被〖临摹〗临时借来的技能：绝恒技属于规则层不借；其余技能（含纯 mod 技）都可借，纯 mod 技没有「使用」时点，借来后不会失去。
+            const borrowable = (player, target) => stealable(player, target).filter(skill => {
+                const info = lib.skill[skill] || {};
+                return !(info.NihilismSkill || info.equipSkill || info.zhuSkill || info.ruleSkill);
+            });
+            const inkedPlayers = player => game.filterPlayer(target => target !== player && target.isIn() && inkCount(target) > 0);
+            const totalInk = () => game.players.reduce((sum, target) => sum + inkCount(target), 0);
+            const removeAllInk = () => {
+                for (const target of game.players.concat(game.dead)) {
+                    const num = inkCount(target);
+                    if (num > 0) target.removeMark(MO, num, false);
+                }
+            };
+            //死亡结算的可用选项；一项都不可用时返回空数组。
+            const deathChoices = player => {
+                const inked = inkedPlayers(player);
+                const choices = [];
+                if (inked.length) choices.push('令所有有「墨」的其他角色的体力上限-1');
+                if (inked.some(target => stealable(player, target).length)) choices.push('获得每名有「墨」的角色各一个技能');
+                if (totalInk() > 0) choices.push('摸等量的牌，然后移去场上所有「墨」');
+                return { inked, choices };
+            };
+            return { MO, inkCount, stealable, borrowable, inkedPlayers, totalInk, removeAllInk, deathChoices };
+        })(),
         NihilismSkill: true,
         forced: true,
-        async init(player) {
-            await game.delay(0.2);
-            if (game.hasPlayer(function (target) {
-                return target.getSkills().length > 1;
-            })) {
-                const result = await player.chooseTarget(`【血墨】：选择任意名其他角色，其选择1个技能保留并令你立即获得其失去的技能`, [1, Infinity], function (card, player, target) {
-                    return target != player && target.getSkills().length > 1;
-                }).set('ai', function (target) {
-                    const player = _status.event.player;
-                    //只对敌人下手：技能越多，抢到的越多
-                    if (get.attitude(player, target) >= 0) return 0;
-                    return target.getSkills().length;
-                }).forResult();
-                if (result && result.targets) {
-                    const targets = result.targets.sortBySeat();
-                    for (const i of targets) {
-                        const skills = i.getSkills(), list = [];
-                        for (const skill of skills) {
-                            list.push([skill, '<div class="popup text" style="width:calc(100%-10px);display:inline-block"><div class="skill">【' +
-                                get.translation(skill) + '】</div><div>' + lib.translate[skill + '_info'] + '</div></div>',
-                            ])
-                        }
-                        const result1 = await i.chooseButton([
-                            `【血墨】：选择1个保留`,
-                            [list, 'textbutton'],
-                        ]).set('forced', true).set('selectButton', 1).set('ai', function (button) {
-                            //保留自己最有价值的技能
-                            return get.skillRank(button.link, 'in') + get.skillRank(button.link, 'out');
-                        }).set('skills', skills).forResult();
-                        if (result1?.bool) {
-                            const rskills = skills.reduce((acc, item) => {
-                                if (!result1.links.includes(item)) acc.push(item);
-                                return acc;
-                            }, []);
-                            i.removeSkills(rskills.slice(0));
-                            player.addSkills(rskills.slice(0));
-                        }
-                    };
+        //①按描述在登场后执行：从 init 钩子移到 gameStart/enterGame，避免在 player.init 内嵌套异步选人。
+        group: 'zshy_ZMxuemo_enter',
+        subSkill: {
+            enter: {
+                trigger: { global: 'gameStart', player: 'enterGame' },
+                forced: true,
+                filter(event, player) {
+                    return !player.storage.zshy_ZMxuemo_entered;
+                },
+                async content(event, trigger, player) {
+                    const { MO, stealable } = get.info('zshy_ZMxuemo').tools;
+                    player.storage.zshy_ZMxuemo_entered = true;
+                    await game.delay(0.2);
+                    if (!game.hasPlayer(target => target !== player && target.isIn() && stealable(player, target).length)) return;
+                    const result = await player.chooseTarget(`###【血墨】：是否选择任意名其他角色？###你夺取其一个技能（其失去该技能），然后其获得1枚「墨」`, [1, Infinity], (card, chooser, target) => {
+                        return target !== player && target.isIn() && stealable(player, target).length > 0;
+                    }).set('ai', target => {
+                        if (!target) return 0;
+                        const player = _status.event.player;
+                        if (get.attitude(player, target) >= 0) return 0;
+                        return stealable(player, target).reduce((sum, skill) => sum + get.skillRank(skill, 'in') + get.skillRank(skill, 'out'), 0);
+                    }).forResult();
+                    if (!result?.targets?.length) return;
+                    for (const target of result.targets.slice(0).sortBySeat()) {
+                        if (!target.isIn()) continue;
+                        const list = stealable(player, target);
+                        if (!list.length) continue;
+                        const picked = await player.chooseButton([
+                            `【血墨】：夺取${get.translation(target)}的一个技能`,
+                            [list.map(skill => [skill, '<div class="popup text" style="width:calc(100%-10px);display:inline-block"><div class="skill">【' + get.translation(skill) + '】</div><div>' + (lib.translate[skill + '_info'] || '') + '</div></div>']), 'textbutton'],
+                        ], [1, 1], true).set('ai', button => get.skillRank(button.link, 'in') + get.skillRank(button.link, 'out') + 1).forResult();
+                        const skill = picked?.links?.[0];
+                        if (!skill) continue;
+                        target.removeSkills([skill]);
+                        player.addSkills([skill]);
+                        target.addMark(MO, 1, false);
+                        await game.delay(0.2);
+                    }
                     await player.update();
                     await game.delay();
-                }
-            }
+                },
+            },
+            mo: {
+                //只用于「墨」标记的显示与说明，不作为独立技能获得。
+                mark: true,
+                charlotte: true,
+                intro: {
+                    content: '一名其他角色使用牌后获得1枚「墨」；有「墨」的角色可以使用牌指定盅墨为目标。',
+                },
+            },
         },
         trigger: { player: 'dieBegin' },
         async content(event, trigger, player) {
+            const { stealable, removeAllInk, totalInk, deathChoices } = get.info('zshy_ZMxuemo').tools;
             trigger.cancel();
-            if (!player.isAlive()) {
-                await player.revive();
-                game.addVideo('revive', player);
-                event.dead = player;
-            };
             player.maxHp = 1;
             await player.recoverTo(player.maxHp);
-            const targets = game.filterPlayer(function (target) {
-                return target != player;
-            }).sortBySeat()
-            for (const i of targets) {
-                const num = Math.max(0, i.maxHp - 1);
-                if (i.maxHp !== num) {
-                    if (i.maxHp > num) await i.loseMaxHp(i.maxHp - num);
-                    else await i.gainMaxHp(num - i.maxHp);
-                    if (i.hp > i.maxHp) i.hp = i.maxHp;
+            const { inked, choices } = deathChoices(player);
+            if (choices.length) {
+                let choice = choices[0];
+                if (choices.length > 1) {
+                    const result = await player.chooseControl(choices).set('prompt', '【血墨】：防止死亡并调整体力上限后，请选择一项').set('ai', () => {
+                        const enemies = inked.filter(target => get.attitude(player, target) < 0);
+                        if (enemies.length && (enemies.length > inked.length - enemies.length || enemies.some(target => target.maxHp <= 1))) return '令所有有「墨」的其他角色的体力上限-1';
+                        if (choices.includes('获得每名有「墨」的角色各一个技能')) return '获得每名有「墨」的角色各一个技能';
+                        return '摸等量的牌，然后移去场上所有「墨」';
+                    }).forResult();
+                    if (choices.includes(result?.control)) choice = result.control;
                 }
-                await i.update();
-                if (i.maxHp <= 0) {
-                    event._dyinged = true;
-                    await i.dying(event);
+                if (choice.startsWith('令所有')) {
+                    for (const target of inked.slice(0).sortBySeat()) {
+                        if (target.isIn()) await target.loseMaxHp(1);
+                    }
+                } else if (choice.startsWith('获得每名')) {
+                    for (const target of inked.slice(0).sortBySeat()) {
+                        if (!target.isIn()) continue;
+                        const list = stealable(player, target);
+                        if (!list.length) continue;
+                        const picked = await player.chooseButton([
+                            `【血墨】：夺取${get.translation(target)}的一个技能`,
+                            [list.map(skill => [skill, '<div class="popup text" style="width:calc(100%-10px);display:inline-block"><div class="skill">【' + get.translation(skill) + '】</div><div>' + (lib.translate[skill + '_info'] || '') + '</div></div>']), 'textbutton'],
+                        ], [1, 1], true).set('ai', button => get.skillRank(button.link, 'in') + get.skillRank(button.link, 'out') + 1).forResult();
+                        const skill = picked?.links?.[0];
+                        if (!skill) continue;
+                        target.removeSkills([skill]);
+                        player.addSkills([skill]);
+                    }
+                } else {
+                    const num = totalInk();
+                    if (num > 0) await player.draw(num);
+                    removeAllInk();
                 }
-            };
-            await player.update();
+                await player.update();
+            }
             await game.delay();
-        },
-        mod: {
-            targetEnabled(card, player, target) {
-                if (target != player) return false;
-            },
         },
         ai: {
             maixie: true,
@@ -773,8 +1153,200 @@ const 远古遗神 = {
                     if (get.tag(card, 'save') || get.tag(card, 'recover')) return `zeroplayertarget`;
                 },
                 player(card, player, target) {
-                    if (get.tag(card, 'save') || get.tag(card, 'recover')) return `zeroplayertarget`;
+                    //只有把救援/回复牌用在自己身上才没有意义；救队友按正常收益评估。
+                    if (target === player && (get.tag(card, 'save') || get.tag(card, 'recover'))) return 'zeroplayer';
                 }
+            },
+        },
+    },
+    zshy_ZMluomo: {//落墨
+        NihilismSkill: true,
+        forced: true,
+        trigger: { global: 'useCard' },
+        filter(event, player) {
+            return !!event.player && event.player !== player;
+        },
+        async content(event, trigger, player) {
+            trigger.player.addMark('zshy_ZMxuemo_mo', 1, false);
+        },
+        mod: {
+            targetEnabled(card, player, target) {
+                if (target === player) return;
+                if (!player?.hasMark?.('zshy_ZMxuemo_mo')) return false;
+            },
+        },
+    },
+    zshy_ZMlinmo: {//临摹
+        prompt: '你使用或打出手牌时，可移去一名角色的1枚「墨」，将这张手牌当本轮其他角色使用或打出过的一张基本牌或普通锦囊牌使用或打出',
+        NihilismSkill: true,
+        enable: ['chooseToUse', 'chooseToRespond'],
+        group: ['zshy_ZMlinmo_get', 'zshy_ZMlinmo_pay', 'zshy_ZMlinmo_watch'],
+        //临摹自用的工具：可摹的牌、支付「墨」、可借技能者都在这里。
+        tools: (() => {
+            const bloodTools = () => get.info('zshy_ZMxuemo').tools;
+            const MO = 'zshy_ZMxuemo_mo';
+            //本轮（当前 round 起点之后）其他角色使用或打出过的基本牌与普通锦囊，按牌名+属性去重。
+            const copyPool = player => {
+                const list = [], seen = new Set();
+                const push = card => {
+                    if (!card) return;
+                    const type = get.type(card);
+                    if (type !== 'basic' && type !== 'trick') return;
+                    const name = get.name(card), nature = get.nature(card);
+                    if (!lib.card[name]) return;
+                    const key = name + '|' + (nature || '');
+                    if (seen.has(key)) return;
+                    seen.add(key);
+                    if (!lib.filter.cardEnabled(get.autoViewAs({ name, nature }), player)) return;
+                    list.push([type, '', name, nature]);
+                };
+                const history = _status.globalHistory || [];
+                for (let i = history.length - 1; i >= 0; i--) {
+                    for (const evt of history[i].useCard || []) {
+                        if (!evt?.player || evt.player === player) continue;
+                        push(evt.card);
+                    }
+                    if (history[i].isRound) break;
+                }
+                for (const target of game.players.concat(game.dead)) {
+                    if (typeof target.getRoundHistory !== 'function') continue;
+                    for (const evt of target.getRoundHistory('respond')) {
+                        if (!evt?.player || evt.player === player) continue;
+                        push(evt.card);
+                    }
+                }
+                return list;
+            };
+            const borrowTargets = player => game.filterPlayer(target => target !== player && target.isIn() && target.countMark(bloodTools().MO) > 0 && bloodTools().borrowable(player, target).length);
+            const canCopy = player => player.countCards('h') > 0 && game.hasPlayer(target => target.countMark(bloodTools().MO) > 0) && copyPool(player).length > 0;
+            const canBorrow = player => borrowTargets(player).length > 0;
+            return { copyPool, borrowTargets, canCopy, canBorrow };
+        })(),
+        filter(event, player) {
+            return get.info('zshy_ZMlinmo').tools.canCopy(player);
+        },
+        chooseButton: {
+            dialog(event, player) {
+                const pool = get.info('zshy_ZMlinmo').tools.copyPool(player);
+                return ui.create.dialog('临摹', [pool, 'vcard'], 'hidden');
+            },
+            filter(button, player) {
+                const parent = _status.event.getParent();
+                return parent.filterCard({ name: button.link[2], nature: button.link[3], isCard: true }, player, parent);
+            },
+            check(button) {
+                const player = _status.event.player;
+                return player.getUseValue({ name: button.link[2], nature: button.link[3], isCard: true }) + 1;
+            },
+            backup(links, player) {
+                return {
+                    filterCard(card) {
+                        return true;
+                    },
+                    selectCard: [1, 1],
+                    position: 'h',
+                    viewAs: { name: links[0][2], nature: links[0][3] },
+                    popname: true,
+                };
+            },
+            prompt(links, player) {
+                return '【临摹】：将一张手牌当【' + get.translation(links[0][2]) + '】使用或打出';
+            },
+        },
+        ai: {
+            order: 6,
+        },
+        subSkill: {
+            //出牌阶段：移去1枚「墨」，获得目标一个技能，直到使用后失去。
+            get: {
+                enable: 'phaseUse',
+                filter(event, player) {
+                    return get.info('zshy_ZMlinmo').tools.canBorrow(player);
+                },
+                check(event, player) {
+                    const { canBorrow } = get.info('zshy_ZMlinmo').tools;
+                    if (!canBorrow(player)) return false;
+                    const used = player.getHistory ? player.getHistory('useSkill', evt => evt.skill === 'zshy_ZMlinmo_get').length : 0;
+                    return used < 2;
+                },
+                ai: {
+                    order: 8,
+                },
+                async content(event, trigger, player) {
+                    const { MO, borrowable } = get.info('zshy_ZMxuemo').tools;
+                    const { borrowTargets } = get.info('zshy_ZMlinmo').tools;
+                    const candidates = borrowTargets(player);
+                    if (!candidates.length) return;
+                    const result = await player.chooseTarget(`###${get.prompt('zshy_ZMlinmo_get')}###你获得其一个技能（已拥有的技能与绝恒技不能选择），直到你使用该技能后失去`, [1, 1], (card, chooser, target) => candidates.includes(target)).set('ai', target => {
+                        if (!target) return 0;
+                        const list = borrowable(player, target);
+                        return list.reduce((sum, skill) => sum + get.skillRank(skill, 'in') + get.skillRank(skill, 'out'), 0) / Math.max(1, list.length) + target.countMark(MO) * 0.2;
+                    }).forResult();
+                    const payer = result?.targets?.[0];
+                    if (!payer) return;
+                    payer.removeMark(MO, 1, false);
+                    const list = borrowable(player, payer);
+                    const picked = await player.chooseButton([
+                        `【临摹】：获得${get.translation(payer)}的一个技能（使用后失去）`,
+                        [list.map(skill => [skill, '<div class="popup text" style="width:calc(100%-10px);display:inline-block"><div class="skill">【' + get.translation(skill) + '】</div><div>' + (lib.translate[skill + '_info'] || '') + '</div></div>']), 'textbutton'],
+                    ], [1, 1], true).set('ai', button => get.skillRank(button.link, 'in') + get.skillRank(button.link, 'out') + 1).forResult();
+                    const skill = picked?.links?.[0];
+                    if (!skill) {
+                        payer.addMark(MO, 1, false);
+                        return;
+                    }
+                    player.storage.zshy_ZM_borrowed = (player.storage.zshy_ZM_borrowed || []).concat(skill);
+                    player.addSkillLog(skill);
+                },
+            },
+            //支付：临摹使用或打出一张牌后，移去1枚「墨」。
+            pay: {
+                charlotte: true,
+                silent: true,
+                forced: true,
+                trigger: { player: ['useCard', 'respond'] },
+                filter(event, player) {
+                    if (typeof event.skill !== 'string') return false;
+                    if (get.sourceSkillFor(event.skill) !== 'zshy_ZMlinmo') return false;
+                    return game.hasPlayer(target => target.countMark('zshy_ZMxuemo_mo') > 0);
+                },
+                async content(event, trigger, player) {
+                    const { MO } = get.info('zshy_ZMxuemo').tools;
+                    const targets = game.filterPlayer(target => target.countMark(MO) > 0);
+                    if (!targets.length) return;
+                    let target = targets[0];
+                    if (targets.length > 1) {
+                        const result = await player.chooseTarget('【临摹】：移去一名角色的1枚「墨」', [1, 1], (card, chooser, current) => current.countMark(MO) > 0).set('ai', current => {
+                            if (!current) return 0;
+                            const attitude = get.attitude(player, current);
+                            return (attitude < 0 ? 2 : 0) + current.countMark(MO) * 0.5;
+                        }).forResult();
+                        if (result?.targets?.length) target = result.targets[0];
+                    }
+                    target.removeMark(MO, 1);
+                },
+            },
+            //借来的技能被使用/触发后失去。
+            watch: {
+                charlotte: true,
+                silent: true,
+                forced: true,
+                trigger: { player: ['useSkillAfter', 'logSkill'] },
+                filter(event, player) {
+                    const list = player.storage.zshy_ZM_borrowed;
+                    if (!Array.isArray(list) || !list.length) return false;
+                    if (typeof event.skill !== 'string') return false;
+                    return list.includes(get.sourceSkillFor(event.skill));
+                },
+                async content(event, trigger, player) {
+                    const skill = get.sourceSkillFor(trigger.skill);
+                    const list = player.storage.zshy_ZM_borrowed || [];
+                    if (!list.includes(skill)) return;
+                    player.storage.zshy_ZM_borrowed = list.filter(item => item !== skill);
+                    player.removeSkillLog(skill);
+                    if (!player.storage.zshy_ZM_borrowed.length) delete player.storage.zshy_ZM_borrowed;
+                    await game.delay();
+                },
             },
         },
     },
@@ -787,19 +1359,15 @@ const 远古遗神 = {
         trigger: { player: 'dieBegin' },
         async content(event, trigger, player) {
             trigger.cancel();
-            if (!player.isAlive()) {
-                await player.revive();
-                game.addVideo('revive', player);
-                event.dead = player;
-            };
             player.maxHp = 1;
             await player.recoverTo(player.maxHp);
+            //只引爆「罪」：AOE 排除自己，避免1血自伤反复触发〖业火〗。
             const targets = game.filterPlayer(function (target) {
-                return target != player;
-            }).sortBySeat()
+                return target != player && target.hasMark('zshy_ZLfenzui_zui');
+            }).sortBySeat();
             for (const i of targets) {
-                await i.damage('kami');
-            };
+                await i.damage(1, 'kami', player);
+            }
         },
         ai: {
             maixie: true,
@@ -809,7 +1377,8 @@ const 远古遗神 = {
                     if (get.tag(card, 'save') || get.tag(card, 'recover')) return `zeroplayertarget`;
                 },
                 player(card, player, target) {
-                    if (get.tag(card, 'save') || get.tag(card, 'recover')) return `zeroplayertarget`;
+                    //只有把救援/回复牌用在自己身上才没有意义；救队友按正常收益评估。
+                    if (target === player && (get.tag(card, 'save') || get.tag(card, 'recover'))) return 'zeroplayer';
                 }
             },
         },
@@ -817,39 +1386,118 @@ const 远古遗神 = {
     zshy_ZLfenzui: {//焚罪
         audio: 'ext:诸神寰宇/audio/character:2',
         NihilismSkill: true,
-        forced: true,
-        trigger: {
-            global: 'damageSource',
-        },
-        filter(event, player) {
-            return event.source?.getSkills().length > 0 && event.source != player;
-        },
-        async content(event, trigger, player) {
-            const num = trigger.num, i = trigger.source;
-            if (i.getSkills().length <= num) {
-                const skills = i.getSkills();
-                i.removeSkills(skills);
-            } else {
-                const skills = i.getSkills(), list = [];
-                for (const skill of skills) {
-                    list.push([skill, '<div class="popup text" style="width:calc(100%-10px);display:inline-block"><div class="skill">【' +
-                        get.translation(skill) + '】</div><div>' + lib.translate[skill + '_info'] + '</div></div>',
-                    ])
-                }
-                const result = await i.chooseButton([
-                    `【焚罪】：选择${num}个技能失去`,
-                    [list, 'textbutton'],
-                ]).set('forced', true).set('selectButton', num).set('ai', function (button) {
-                    //优先失去价值最低的技能
-                    return -(get.skillRank(button.link, 'in') + get.skillRank(button.link, 'out'));
-                }).set('skills', skills).forResult();
-                if (result?.bool) {
-                    i.removeSkills(result.links.slice(0));
-                }
-            }
+        //①其他角色造成伤害后获得1枚「罪」；②一名角色的回合结束时，所有有「罪」的角色受到1点火焰伤害，然后移去1枚「罪」。
+        group: ['zshy_ZLfenzui_get', 'zshy_ZLfenzui_burn'],
+        subSkill: {
+            //只用于「罪」标记的显示与说明，不作为独立技能获得。
+            zui: {
+                charlotte: true,
+                intro: {
+                    content: '回合结束时受到1点火焰伤害，然后移去1枚「罪」。',
+                },
+            },
+            //①其他角色造成伤害后，其获得1枚「罪」；已有「赦」的角色不再获得。
+            get: {
+                forced: true,
+                trigger: { global: 'damageSource' },
+                filter(event, player) {
+                    return event.source && event.source != player && event.source.isIn() && event.num > 0 && !event.source.hasMark('zshy_ZLpanfa_she');
+                },
+                async content(event, trigger, player) {
+                    //〖判罚〗的「罪印」：每枚让获得的「罪」翻一倍（指数增长）。
+                    const stack = trigger.source.countMark('zshy_ZLpanfa_yin');
+                    await trigger.source.addMark('zshy_ZLfenzui_zui', 2 ** stack);
+                },
+            },
+            //②一名角色的回合结束时，所有有「罪」的角色受到1点火焰伤害，然后移去1枚「罪」。
+            burn: {
+                forced: true,
+                trigger: { global: 'phaseJieshuBegin' },
+                filter(event, player) {
+                    return game.hasPlayer(function (target) {
+                        return target.hasMark('zshy_ZLfenzui_zui');
+                    });
+                },
+                async content(event, trigger, player) {
+                    const mark = 'zshy_ZLfenzui_zui';
+                    const targets = game.filterPlayer(function (target) {
+                        return target.hasMark(mark);
+                    }).sortBySeat();
+                    for (const target of targets) {
+                        await target.damage(1, 'fire', 'nosource', 'nocard');
+                        target.removeMark(mark, 1);
+                    }
+                },
+            },
         },
     },
-
+    zshy_ZLpanfa: {//判罚
+        audio: 'ext:诸神寰宇/audio/character:2',
+        NihilismSkill: true,
+        enable: 'phaseUse',
+        usable: 1,
+        filter(event, player) {
+            //没有「自己以外的、尚未获得「赦」的角色」时不可发动。
+            return game.hasPlayer(function (target) {
+                return target !== player && (!target.isIn || target.isIn()) && !target.hasMark('zshy_ZLpanfa_she');
+            });
+        },
+        prompt: '出牌阶段限一次，你可选择一名其他角色，然后选择一项：1.令其获得1枚「罪印」；2.若其没有「罪」，也没有「罪印」，则其获得「赦」，本局不再获得「罪」',
+        async content(event, trigger, player) {
+            const mark = 'zshy_ZLfenzui_zui';
+            const she = 'zshy_ZLpanfa_she';
+            const yin = 'zshy_ZLpanfa_yin';
+            const result = await player.chooseTarget('【判罚】：选择一名其他角色', [1, 1], function (card, player, target) {
+                //不能选择自己，也不能选择已经获得「赦」的角色。
+                return target && target !== player && (!target.isIn || target.isIn()) && !target.hasMark(she);
+            }).set('ai', function (target) {
+                const player = _status.event.player;
+                if (!target || target === player) return 0;
+                const attitude = get.attitude(player, target);
+                //敌方：定罪叠倍率；友方：只有“无「罪」也无「罪印」”时才值得选中（去赦免）。
+                if (attitude < 0) return 1 + target.countMark(yin);
+                if (target.countMark(mark) === 0 && target.countMark(yin) === 0) return 1;
+                return 0;
+            }).forResult();
+            if (!result?.bool || !result.targets?.length) return;
+            const target = result.targets[0];
+            //有「罪」或已有「罪印」的角色不能被赦免。
+            const options = ['定罪'];
+            if (target.countMark(mark) === 0 && target.countMark(yin) === 0) options.push('赦免');
+            const picked = await player.chooseControl(options).set('prompt', '【判罚】：选择一项').set('ai', function () {
+                if (get.attitude(player, target) < 0) return '定罪';
+                return options.includes('赦免') ? '赦免' : '定罪';
+            }).forResult();
+            const choice = picked?.control;
+            if (choice === '定罪') {
+                //定罪：叠一层「罪印」，之后获得的「罪」按 2^枚数 结算；多次定罪指数增长。
+                await target.addMark(yin, 1);
+                game.log(target, '获得的「罪」翻倍（×' + 2 ** target.countMark(yin) + '）');
+            } else if (choice === '赦免') {
+                //赦免：本局不再获得「罪」。
+                await target.addMark(she, 1);
+            }
+        },
+        subSkill: {
+            //只用于「罪印」标记的显示与说明，不作为独立技能获得。
+            yin: {
+                charlotte: true,
+                intro: {
+                    content: '之后获得的「罪」翻倍（每枚「罪印」再翻一倍）。',
+                },
+            },
+            //只用于「赦」标记的显示与说明，不作为独立技能获得。
+            she: {
+                charlotte: true,
+                intro: {
+                    content: '不会获得「罪」。',
+                },
+            },
+        },
+        ai: {
+            order: 6,
+        },
+    },
 };
 const 江山多殇 = {
     zshy_AAABSkill: {//魂殇
@@ -882,74 +1530,228 @@ const 江山多殇 = {
     //黯日
     zshy_ARjunwei: {//君威
         NihilismSkill: true,
+        //君威自用工具（技能对象上的自定义字段，引擎忽略）：可失效技能、失效登记与到期都在这里。
+        tools: (() => {
+            const PAN = 'zshy_ARzuifa_pan';
+            const FAIL = 'zshy_ARjunwei_fail';
+            //可被失效的技能：绝恒技已由 arenaReady 的免疫系统全局拦截（获得/移除/封禁/失效/skillBlocker），这里再显式跳过一层，保证描述与实现一致；隐藏技、子技能、状态技与本体固定技同样跳过。
+            const disableable = target => target.getSkills().filter(skill => {
+                const info = lib.skill[skill];
+                if (!info || !lib.translate[skill] || !lib.translate[skill + '_info']) return false;
+                if (info.NihilismSkill || info.sub || info.charlotte || info.superCharlotte || info.fixed) return false;
+                return skill !== FAIL;
+            });
+            const failed = target => (target.storage.zshy_ARjunwei_failed || []).slice();
+            const fail = (target, skills) => {
+                target.storage.zshy_ARjunwei_failed = failed(target).concat(skills).unique();
+                target.addSkillBlocker(FAIL);
+            };
+            const clear = target => {
+                const list = failed(target);
+                if (!list.length) return list;
+                target.storage.zshy_ARjunwei_failed = [];
+                target.removeSkillBlocker(FAIL);
+                return list;
+            };
+            return { PAN, FAIL, disableable, failed, fail, clear };
+        })(),
         trigger: {
             player: 'useCardToTargeted',
         },
         filter(event, player) {
-            return event.target != player;
+            const target = event.target;
+            if (!target || target == player || (target.isIn && !target.isIn())) return false;
+            //每名角色每回合限一次
+            if ((player.storage.zshy_ARjunwei_used || []).includes(target.playerid)) return false;
+            //至少要有一项可选：有牌可交，或身上有可失效的技能
+            return target.countCards('he') > 0 || get.info('zshy_ARjunwei').tools.disableable(target).length > 0;
         },
         prompt2(event, player) {
-            return '获得' + get.translation(event.target) + '随机1个你未拥有的技能并对其造成1点神属性伤害'
+            return '令' + get.translation(event.target) + '选择：交给你一张牌，或令你选择并失效其一个技能直到你的回合开始，然后其受到1点神属性伤害并获得1枚「叛」';
         },
         check(event, player) {
-            const att = get.attitude(player, event.target);
-            if (att < 0) return true;
-            //中立角色身上有值得抢的技能时也值得发动
-            if (att > 0) return false;
-            return event.target.getSkills(true, false).some(skill => !player.hasSkill(skill) && lib.translate[skill + '_info']);
+            return get.attitude(player, event.target) < 0;
         },
         async content(event, trigger, player) {
-            const skill = trigger.target.getSkills(true, false).filter(skill => {
-                if (skill == 'jiu') return false;
-                if (player.hasSkill(skill)) return false;
-                if (!lib.translate[skill + '_info']) return false;
-                if (lib.translate[skill + '_info'] == '') return false;
-                var info = get.info(skill);
-                if (!info) return false;
-                return true;
-            }).randomGet();
-            if (skill) await player.addSkills(skill);
-            await trigger.target.damage('kami');
+            const target = trigger.target;
+            const { PAN, disableable, fail } = get.info('zshy_ARjunwei').tools;
+            player.storage.zshy_ARjunwei_used = (player.storage.zshy_ARjunwei_used || []).concat([target.playerid]);
+            //失效持续到黯日下个回合开始：本回合内发动则须等下一轮，否则到黯日下个回合的第一个阶段即解除。
+            player.storage.zshy_ARjunwei_stamp = { round: game.roundNumber, self: _status.currentPhase === player };
+            const list = disableable(target);
+            const canGive = target.countCards('he') > 0;
+            const options = [];
+            if (canGive) options.push('交给黯日一张牌');
+            options.push('被黯日失效一个技能');
+            const picked = await target.chooseControl(options)
+                .set('prompt', '【君威】：选择一项')
+                .set('ai', () => {
+                    //有牌且技能比牌值钱时交牌；没牌或没有可失效技能时只能吃选项2
+                    if (canGive && (list.length == 0 || target.countCards('he') > 2)) return options[0];
+                    return options[options.length - 1];
+                }).forResult();
+            if (picked?.control == '交给黯日一张牌') {
+                const result = await target.chooseCard('【君威】：选择交给黯日的一张牌', 'he').set('ai', card => {
+                    if (!card) return 0;
+                    return -get.value(card, target);
+                }).forResult();
+                if (result?.cards?.length) await player.gain(result.cards, target, 'giveAuto');
+                return;
+            }
+            if (list.length) {
+                const buttons = list.map(skill => [skill, '<div class="popup text" style="width:calc(100%-10px);display:inline-block"><div class="skill">【' + get.translation(skill) + '】</div><div>' + (lib.translate[skill + '_info'] || '') + '</div></div>']);
+                const pick = await player.chooseButton(['【君威】：选择失效' + get.translation(target) + '的一个技能，直到你的回合开始', [buttons, 'textbutton']], [1, 1], true)
+                    .set('ai', button => get.skillRank(button.link, 'in') + get.skillRank(button.link, 'out') + 1).forResult();
+                const skill = pick?.links?.[0] || list.randomGet();
+                if (skill) {
+                    fail(target, [skill]);
+                    game.log(target, '的', '#g【' + get.translation(skill) + '】', '失效');
+                }
+            }
+            await target.damage(1, 'kami');
+            await target.addMark(PAN, 1);
         },
         ai: {
             expose: 0.5,
             threaten: 1.5,
         },
+        group: ['zshy_ARjunwei_expire', 'zshy_ARjunwei_reset'],
+        subSkill: {
+            //失效到期：黯日回合的第一个阶段开始即解除（本回合内发动的等下一轮）。
+            expire: {
+                charlotte: true,
+                forced: true,
+                trigger: {
+                    player: ['phaseZhunbeiBegin', 'phaseUseBegin', 'phaseJieshuBegin'],
+                },
+                filter(event, player) {
+                    if (!game.hasPlayer(target => get.info('zshy_ARjunwei').tools.failed(target).length > 0)) return false;
+                    const stamp = player.storage.zshy_ARjunwei_stamp;
+                    if (!stamp) return true;
+                    return !stamp.self || game.roundNumber > stamp.round;
+                },
+                async content(event, trigger, player) {
+                    for (const target of game.players) {
+                        const list = get.info('zshy_ARjunwei').tools.clear(target);
+                        if (!list.length) continue;
+                        game.log(target, '的技能', ...list.map(skill => '#g【' + get.translation(skill) + '】'), '恢复');
+                    }
+                    delete player.storage.zshy_ARjunwei_stamp;
+                },
+            },
+            //每名角色每回合限一次的登记在每个回合结束时清空。
+            reset: {
+                charlotte: true,
+                forced: true,
+                trigger: {
+                    global: ['phaseJieshuBegin'],
+                },
+                filter(event, player) {
+                    return (player.storage.zshy_ARjunwei_used || []).length > 0;
+                },
+                async content(event, trigger, player) {
+                    player.storage.zshy_ARjunwei_used = [];
+                },
+            },
+            //只作为失效登记的载体：被登记的技能会从 getSkills 中滤除，表现为失效。
+            fail: {
+                charlotte: true,
+                skillBlocker(skill, player) {
+                    return (player.storage.zshy_ARjunwei_failed || []).includes(skill);
+                },
+            },
+        },
     },
     zshy_ARzuifa: {//罪罚
         NihilismSkill: true,
+        forced: true,
+        //罪罚自用工具：可失去的技能与「叛」标记都在这里。
+        tools: (() => {
+            const PAN = 'zshy_ARzuifa_pan';
+            //裁决时可失去的技能：绝恒技已由 arenaReady 全局拦截（changeSkills 双向过滤），这里同样显式跳过；隐藏技/子技能/状态技与本体固定技跳过。
+            const losable = target => target.getSkills().filter(skill => {
+                const info = lib.skill[skill];
+                if (!info || !lib.translate[skill] || !lib.translate[skill + '_info']) return false;
+                if (info.NihilismSkill || info.sub || info.charlotte || info.superCharlotte || info.fixed) return false;
+                return true;
+            });
+            return { PAN, losable };
+        })(),
         trigger: {
-            global: ['changeHpBefore'],
+            global: ['phaseJieshuBegin'],
+        },
+        filter(event, player) {
+            return game.hasPlayer(target => (!target.isIn || target.isIn()) && target.countMark('zshy_ARzuifa_pan') >= 3);
         },
         async content(event, trigger, player) {
-            const num = trigger.num > 0 ? trigger.num : -trigger.num;
-            const str = '令任意名其他角色随机失去' + num + '个技能并对其造成' + num + '点神属性伤害';
-            const result = await player.chooseTarget(get.prompt('zshy_ARzuifa'), str, [1, Infinity], function (event, target, player) {
-                return target != player;
-            }).set('ai', function (target) {
-                const player = _status.event.player;
-                return get.damageEffect(target, player, player, 'kami') > 0;
-            }).forResult();
-            if (result.bool) {
-                for (const i of result.targets.sortBySeat()) {
-                    const skill = i.getSkills(true, false).filter(skill => {
-                        if (skill == 'jiu') return false;
-                        if (!lib.translate[skill + '_info']) return false;
-                        if (lib.translate[skill + '_info'] == '') return false;
-                        var info = get.info(skill);
-                        if (!info) return false;
-                        return true;
-                    }).randomGet(num);
-                    i.removeSkills(skill);
-                    await i.damage(num, 'kami');
-                };
+            const { PAN, losable } = get.info('zshy_ARzuifa').tools;
+            const targets = game.filterPlayer(target => target.isIn() && target.countMark(PAN) >= 3).sortBySeat();
+            for (const target of targets) {
+                const num = target.countMark(PAN);
+                if (num < 3) continue;
+                target.removeMark(PAN, num);
+                const list = losable(target);
+                const options = [];
+                if (list.length) options.push('随机失去1个技能');
+                options.push('受到' + num + '点神属性伤害');
+                const picked = await target.chooseControl(options)
+                    .set('prompt', '【罪罚】：移去' + num + '枚「叛」，选择一项')
+                    .set('ai', () => {
+                        //技能多且血线还高时先丢技能；体力吃紧时宁可挨打
+                        if (options.length < 2) return options[0];
+                        if (target.hp > num + 2) return options[0];
+                        return options[options.length - 1];
+                    }).forResult();
+                if (picked?.control == '随机失去1个技能' && list.length) {
+                    await target.removeSkills(list.randomGet());
+                } else {
+                    await target.damage(num, 'kami');
+                }
+                player.storage.zshy_ARrishi_count = (Number(player.storage.zshy_ARrishi_count) || 0) + 1;
+                if (player.hasSkill('zshy_ARrishi') && !player.hasSkill('zshy_ARducai') && player.storage.zshy_ARrishi_count >= 2) {
+                    await player.useSkill('zshy_ARrishi');
+                }
             }
         },
         ai: {
             expose: 1,
-            maixie: true,
-            maixie_hp: true,
             threaten: 1.5,
+        },
+        subSkill: {
+            //只用于「叛」标记的显示与说明，不作为独立技能获得。
+            pan: {
+                charlotte: true,
+                intro: {
+                    content: '回合结束时若达到3枚，〖罪罚〗执行「裁决」：移去所有「叛」，然后选择失去1个技能或受到等量点神属性伤害。',
+                },
+            },
+        },
+    },
+    zshy_ARrishi: {//日蚀
+        juexingji: true,
+        derivation: ['zshy_ARducai'],
+        skillAnimation: true,
+        animationColor: 'thunder',
+        forced: true,
+        async content(event, trigger, player) {
+            player.awakenSkill('zshy_ARrishi');
+            for (const target of game.players.concat(game.dead)) {
+                const num = target.countMark('zshy_ARzuifa_pan');
+                if (num > 0) target.removeMark('zshy_ARzuifa_pan', num);
+            }
+            await player.loseMaxHp(2);
+            player.addSkill('zshy_ARducai');
+            player.update();
+        },
+    },
+    zshy_ARducai: {//独裁
+        locked: true,
+        forced: true,
+        trigger: {
+            player: 'useCard',
+        },
+        async content(event, trigger, player) {
+            await trigger.directHit.addArray(game.players);
         },
     },
 
@@ -1135,7 +1937,6 @@ const 江山多殇 = {
             }
         },
     },
-
 };
 const 异界来客 = {
     //初音未来
@@ -2155,7 +2956,6 @@ const 异界来客 = {
                 '这对吗？',
             ].randomGet());
             await player.chooseDrawRecover(true);
-
         },
     },
     zshy_TXZZxueqiang: {//削强
@@ -2201,7 +3001,6 @@ const 异界来客 = {
             await trigger.player.changeSkills([skill2], [skill1]);
         },
     },
-
 };
 const Vsinger = {
     zshy_Vsingertianlai: {//天籁
@@ -2433,7 +3232,6 @@ const Vsinger = {
                                 break;
                         }
                     }
-
                 }
             }
         },
@@ -2759,11 +3557,8 @@ const SlayTheSpire = {
             },
         },
     },
-
 };
-
 const skill = {
     ...远古遗神, ...江山多殇, ...异界来客, ...Vsinger, ...SlayTheSpire,
 };
-
 export default skill;

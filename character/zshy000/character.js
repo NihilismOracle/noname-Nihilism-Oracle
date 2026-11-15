@@ -9,7 +9,7 @@ export const 光阴长河 = {
         group: `wei`,
         doubleGroup: [],
         groupBorder: ``,
-        skills: [`zshy_jinmie`, `zshy_shenzhu`, `zshy_zangshang`, `zshy_junwei`],
+        skills: [`zshy_jinmie`, `zshy_shenzhu`, `zshy_zangshang`, `zshy_junwei`, `zshy_diye`],
 
         isZhugong: true,
 

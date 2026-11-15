@@ -1,5 +1,6 @@
 // 按版本维护武将改动：new = 新武将，changed = 功能/技能修改过的武将
 export const versionCharacters = {
+    '1.0.6': { new: [], changed: ['Nihilism_AAAAanjing', 'zshy_AAAAantianhen', 'zshy_AAAAmiehun', 'zshy_AAAAzhongmo', 'zshy_AAAAzuilian', 'zshy_AAYBhun', 'zshy_AAZZluxunWMXL'] },
     '1.0.5': { new: [], changed: [] },
     '1.0.4': { new: [], changed: [] },
     '1.0.3': {

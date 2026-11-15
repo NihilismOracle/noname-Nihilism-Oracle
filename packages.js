@@ -76,7 +76,7 @@ function buildIntro() {
     '更新时间：' + UPDATE_DATE + '　·　更新版本：' + VERSION + '　·　适配本体：' + GAME_VERSION +
     '</span>' +
     '<span style="display:block;border-top:1px solid rgba(255,255,255,0.15);margin:8px 0 6px;"></span>' +
-    fold('★ 本次更新（' + latestUpdate.date + '）',
+    fold('★ 本次更新（' + latestUpdate.version + '）',
         '<span style="display:block;font-size:15px;line-height:1.85;color:rgba(255,255,255,0.92);">' + updateItems + '</span>', true) +
     fold('★ 本次更新武将（查看）', versionCharactersHtml(), false) +
     fold('★ 扩展介绍',

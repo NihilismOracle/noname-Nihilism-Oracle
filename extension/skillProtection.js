@@ -48,7 +48,12 @@ function immutableDefinition(value, seen = new WeakMap()) {
     if (seen.has(value)) return seen.get(value);
     const copy = Array.isArray(value) ? [] : {};
     const proxy = new Proxy(copy, {
-        set() { return true; },
+        // 引擎初始化会给技能补默认字段（如 game.finishSkill 写 ai），必须放行「新增」；
+        // 已登记定义字段的改写、删除仍被拦截（已存在的 key 不写入）。
+        set(target, key, value) {
+            if (!Object.prototype.hasOwnProperty.call(target, key)) target[key] = value;
+            return true;
+        },
         deleteProperty() { return true; },
         defineProperty(target, key, descriptor) {
             // 不能谎报一个未创建的不可配置属性，否则违反 Proxy 不变量。
@@ -157,7 +162,14 @@ export function installSkillProtection() {
         return original.apply(this, args);
     });
     for (const method of ['cancel', 'finish', 'untrigger', 'setContent', 'resolve']) wrap(prototype, method, original => function (...args) {
-        if (externalInterruption(this)) return method === 'setContent' || method === 'untrigger' ? this : undefined;
+        if (externalInterruption(this)) {
+            // 本体在创建 trigger / *_cost / 技能事件时才会首次写入 content，此时 content 尚不存在。
+            // 若把这次写入也当成外部中断拦掉，事件永远没有 content，loop() 随后抛
+            // TypeError: this.content is not a function（gameEvent.js:232）。
+            // 本层要拦的是「他技替换已经生效的 content」，首次装载放行。
+            if (method === 'setContent' && typeof this.content !== 'function') return original.apply(this, args);
+            return method === 'setContent' || method === 'untrigger' ? this : undefined;
+        }
         return original.apply(this, args);
     });
     wrap(lib.filter, 'filterTrigger', original => function (event, player, name, skill, ...args) {

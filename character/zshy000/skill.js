@@ -82,13 +82,24 @@ const 光阴长河 = {
         audio: 'ext:诸神寰宇/audio/character:2',
         NihilismSkill: true,
         trigger: {
-            global: `phaseZhunbeiBegin`,
+            global: `phaseBegin`,
             player: `damageEnd`,
         },
         filter(event, player, name) {
             //受到伤害后必须存在伤害来源才可发动
             if (name == 'damageEnd') return !!event.source;
             return true;
+        },
+        chooseOption(player, target) {
+            const att = get.attitude(player, target);
+            if (att > 0) {
+                //队友：翻面状态下翻回正面，否则不发动
+                return target.isTurnedOver() ? 0 : -1;
+            }
+            //敌人：能翻面就翻面（附带摸牌），已翻面或不能翻面时改为弃牌失血
+            if (!target.isTurnedOver() && !target.hasSkillTag('noturn')) return 0;
+            if (target.countCards('he') > 0) return 1;
+            return 2;
         },
         async cost(event, trigger, player) {
             let target;
@@ -103,13 +114,8 @@ const 光阴长河 = {
                 const resulttarget = await player.chooseTarget(get.prompt(event.skill), `选择一名角色，然后令其执行一项`)
                     .set('ai', function (target) {
                         const player = _status.event.player;
-                        const att = get.attitude(player, target);
-                        if (att > 0) {
-                            //队友：只有在能为其解开翻面时才有价值
-                            return target.isTurnedOver() ? 1.2 : 0.4;
-                        }
-                        //敌人：威胁越大（手牌多、体力高）越优先
-                        return (1 - att / 2) * (1 + Math.min(target.countCards('h'), 6) / 10);
+                        if (target == player) return -1;
+                        return get.attitude(player, target);
                     }).forResult()
                 if (!resulttarget?.bool || !resulttarget.targets?.length) {
                     event.result = { bool: false };
@@ -117,12 +123,16 @@ const 光阴长河 = {
                 }
                 target = resulttarget.targets[0];
             }
-            //选项改为对话框内的按钮，直接点击选择
+            const index = lib.skill.zshy_shenzhu.chooseOption(player, target);
+            if (typeof index !== 'number' || index < 0) {
+                event.result = { bool: false };
+                return;
+            }
+            const num = Math.max(1, player.getDamagedHp() + 1);
             const options = [
-                '不能打出手牌至本轮结束',
-                '武将技能失效至本轮结束',
-                '将武将牌翻面',
-                '回复1点体力或摸一张牌',
+                `将武将牌翻面，然后你摸${num}张牌`,
+                `弃置${num}张牌，然后失去1点体力`,
+                '不能使用或打出手牌直到本轮结束',
             ];
             const list = options.map((text, i) => {
                 const link = '选项' + get.cnNumber(i + 1, true);
@@ -145,53 +155,28 @@ const 光阴长河 = {
                 cost_data: result.links[0],
             };
         },
-        chooseOption(player, target) {
-            const att = get.attitude(player, target);
-            if (att > 0) {
-                //队友：翻面状态下翻回来，否则令其摸一张牌或回复
-                return target.isTurnedOver() ? 2 : 3;
-            }
-            const canTurn = !target.isTurnedOver() && !target.hasSkillTag('noturn');
-            const isCurrent = _status.currentPhase == target;
-            const hand = target.countCards('h');
-            //统计其可被禁用的主动技能数，判断封技能是否划算
-            const skills = target.getSkills().filter(skill => {
-                const info = get.info(skill);
-                if (!info) return false;
-                if (info.charlotte || info.superCharlotte || info.locked) return false;
-                return !!lib.translate[skill + '_info'];
-            });
-            if (isCurrent) {
-                //正在行动的敌人：封手牌或封技能能直接掐掉其本回合
-                if (canTurn && hand <= 2 && skills.length <= 1) return 2;
-                if (hand >= 3 && hand >= skills.length + 1) return 0;
-                if (skills.length) return 1;
-                if (canTurn) return 2;
-                return 0;
-            }
-            //不在行动中的敌人：翻面令其少一个回合，通常收益最大
-            if (canTurn) return 2;
-            if (hand >= 3) return 0;
-            if (skills.length) return 1;
-            return 0;
-        },
         async content(event, trigger, player) {
+            const target = event.targets[0];
+            const num = Math.max(1, player.getDamagedHp() + 1);
             switch (event.cost_data) {
                 case '选项一':
-                    await event.targets[0].addTempSkill('zshy_shenzhu_ban', { global: 'roundEnd' });
+                    await target.turnOver();
+                    await player.draw(num);
                     break;
                 case '选项二':
-                    const skills = event.targets[0].getSkills();
-                    await event.targets[0].tempBanSkill(skills, { global: 'roundEnd' });
+                    if (target.countCards('he') > 0) await target.chooseToDiscard('he', num, true);
+                    await target.loseHp();
                     break;
                 case '选项三':
-                    await event.targets[0].turnOver();
-                    break;
-                case '选项四':
-                    await event.targets[0].chooseDrawRecover(true);
+                    await target.addTempSkill('zshy_shenzhu_ban', { global: 'roundEnd' });
                     break;
                 default:
                     break;
+            }
+            //令其翻面或失去体力时获得「业」，每轮至多1枚
+            if (event.cost_data != '选项三' && player.countMark('zshy_diye') < 3 && player.storage.zshy_shenzhu_round !== game.roundNumber) {
+                player.storage.zshy_shenzhu_round = game.roundNumber;
+                await player.addMark('zshy_diye', 1);
             }
         },
         getIndex(event) {
@@ -259,6 +244,8 @@ const 光阴长河 = {
                     if (result?.bool) {
                         let skill = result.links;
                         player.addSkillLog(skill);
+                        //收尸获得技能后获得「业」
+                        if (player.countMark('zshy_diye') < 3) await player.addMark('zshy_diye', 1);
                     }
                 };
                 if (trigger.player.countCards('hej') > 0) {
@@ -299,22 +286,17 @@ const 光阴长河 = {
             global: `useCard`,
         },
         filter(event, player) {
-            //与cost里的弃牌范围保持一致（手牌或装备区），否则装备区有同名牌时无法发动
-            return event.player != player && player.countCards('he', function (card) {
-                return get.name(card) == get.name(event.card);
-            }) > 0;
+            return event.player != player && player.countMark('zshy_diye') > 0;
         },
         async cost(event, trigger, player) {
-            const str = `弃置一张与${get.translation(trigger.card)}同名的牌，令${get.translation(trigger.card)}失效，然后你回复1点体力或摸一张牌`;
-            event.result = await player.chooseToDiscard(get.prompt('zshy_junwei'), str, 'he', function (card, player, target) {
-                return get.name(card) == get.name(trigger.card);
-            }).set('ai', function (card) {
-                const worth = lib.skill.zshy_junwei.getWorth(trigger, player);
-                if (worth <= 0) return 0;
-                //抵消后还能摸一张牌或回复1点体力，这部分自身也是收益
-                const bonus = player.isDamaged() ? 1.5 : 1;
-                return worth + bonus - get.value(card);
-            }).forResult();
+            const str = `移去1枚「业」，令${get.translation(trigger.card)}无效，然后你摸一张牌`;
+            event.result = await player.chooseBool(get.prompt('zshy_junwei'), str)
+                .set('ai', function () {
+                    const player = _status.event.player;
+                    const worth = lib.skill.zshy_junwei.getWorth(trigger, player);
+                    //抵消后还能摸一张牌，这部分自身也是收益
+                    return worth + 1 > 0;
+                }).forResult();
         },
         getWorth(trigger, player) {
             const card = trigger.card;
@@ -334,12 +316,103 @@ const 光阴长河 = {
             return -effect;
         },
         async content(event, trigger, player) {
+            player.removeMark('zshy_diye', 1);
             if (trigger.targets) {
                 trigger.targets.length = 0;
             }
             trigger.all_excluded = true;
             game.log(player, '令', trigger.card, '无效了');
-            await player.chooseDrawRecover(true);
+            await player.draw();
+        },
+        subSkill: {
+            judge: {
+                NihilismSkill: true,
+                forced: true,
+                trigger: {
+                    global: 'judgeEnd',
+                },
+                filter(event, player) {
+                    return event.player.group == 'wei';
+                },
+                async content(event, trigger, player) {
+                    await player.draw();
+                    if (trigger.result.color == 'black') {
+                        await player.recover();
+                    }
+                },
+                ai: {
+                    notemp: true,
+                },
+            },
+        },
+    },
+    zshy_diye: {//帝业
+        audio: 'ext:诸神寰宇/audio/character:2',
+        NihilismSkill: true,
+        marktext: '业',
+        intro: {
+            content: '已积累#枚「业」',
+        },
+        trigger: {
+            player: ['damageBegin4', 'dying', 'dieBegin'],
+        },
+        filter(event, player, name) {
+            if (name == 'damageBegin4') {
+                const num = event.num || 1;
+                return !event.hasNature('kami') && player.countMark('zshy_diye') >= num;
+            }
+            return player.maxHp > 1;
+        },
+        async cost(event, trigger, player) {
+            if (event.triggername != 'damageBegin4') {
+                event.result = { bool: true };
+                return;
+            }
+            const num = trigger.num || 1;
+            event.result = await player.chooseBool(get.prompt('zshy_diye'),
+                `移去${num}枚「业」防止此伤害`).set('ai', function () {
+                const player = _status.event.player;
+                return get.damageEffect(player, trigger.source || player, player, trigger.nature) < 0;
+            }).forResult();
+        },
+        async content(event, trigger, player) {
+            if (event.triggername == 'damageBegin4') {
+                const num = trigger.num || 1;
+                player.removeMark('zshy_diye', Math.min(num, player.countMark('zshy_diye')));
+                trigger.cancel();
+            } else {
+                player.maxHp = Math.max(1, player.maxHp - 1);
+                player.hp = player.maxHp;
+                if (event.triggername == 'dieBegin') {
+                    trigger.cancel();
+                    game.log(player, '将体力上限减少1点并阻止了死亡');
+                }
+                player.update();
+                game.delayx();
+            }
+        },
+        subSkill: {
+            clear: {
+                NihilismSkill: true,
+                forced: true,
+                trigger: {
+                    player: 'damageEnd',
+                },
+                filter(event) {
+                    return event.hasNature('kami');
+                },
+                async content(event, trigger, player) {
+                    player.removeMark('zshy_diye', player.countMark('zshy_diye'));
+                },
+            },
+        },
+        ai: {
+            maixie_hp: true,
+            effect: {
+                target(card, player, target) {
+                    if (get.tag(card, 'damage') && target.countMark('zshy_diye') > 0) return 0.5;
+                },
+            },
         },
     },
 
@@ -2008,7 +2081,8 @@ const wxgySkill = {
             game.broadcastAll((videoId, prompt, list) => {
                 const dialog = ui.create.dialog(prompt + '（点选后点击“确定”）', [list, 'character'], 'hidden');
                 dialog.videoId = videoId;
-                ui.dialogs.add(dialog);
+                // 直接 open；只登记 ui.dialogs 会让本体 Dialog.open 跳过 append，对话框不显示、事件卡住。
+                dialog.open();
             }, videoId, prompt, list.slice());
             try {
                 const next = player.chooseButton(true)
