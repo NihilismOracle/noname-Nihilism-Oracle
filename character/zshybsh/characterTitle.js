@@ -1,6 +1,8 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js';
 
 const characterTitle = {
+    zshy_AAZZyujiBSP: '夙仙望道',
+
     zshy_AAZZzhouyuBSP: '燎琰涤浪',
 
     zshy_AAZZzhonghuiBSP: '兵势原画',

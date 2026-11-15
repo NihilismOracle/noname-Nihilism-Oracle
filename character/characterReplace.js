@@ -83,7 +83,7 @@ const characterReplace = {
     kuailiangkuaiyue: ['kuailiangkuaiyue', 'zshy_AAZZpengliangpengyueSHZL'],//墟蒯良蒯越
     liaohua: ['zshy_AAZZliaohuaYJCM'],//墟廖化
     lijue: ['zshy_AAZZlijueJMGX'],//墟李傕
-    lingcao: ['zshy_AAZZlingcao'],//墟凌操
+    lingcao: ['zshy_AAZZlingcaoMB'],//墟凌操
     lingtong: ['zshy_AAZZlingtongYJCM'],//墟凌统
     liubei: ['zshy_AAZZliubeiBZ'],//墟刘备
     liubiao: ['zshy_AAZZliubiaoYJCM'],//墟刘表
@@ -98,7 +98,7 @@ const characterReplace = {
     liru: ['zshy_AAZZliruYJCM'],//墟李儒
     lisu: ['zshy_AAZZlisuWDWB'],//墟李肃
     liyan: ['zshy_AAZZliyanYJCM'],//墟李严
-    liuzan: ['zshy_AAZZliuzan'],//墟留赞
+    liuzan: ['zshy_AAZZliuzanMB'],//墟留赞
     luji: ['zshy_AAZZlujiSHZL', `zshy_AAZZlujiWJLS`],//墟陆绩、墟族陆绩
     lujing: ['zshy_AAZZlujingWJLS'],//墟族陆景
     lukang: ['zshy_AAZZlukangSHZL'],//墟陆抗
@@ -114,16 +114,16 @@ const characterReplace = {
     lvmeng: ['zshy_AAZZlvmengBZ'],//墟吕蒙
     machao: ['zshy_AAZZmachaoBZ', 'zshy_AAZZmachaoSP'],//墟马超、墟SP马超
     madai: ['zshy_AAZZmadaiYJCM'],//墟马岱
-    majun: ['zshy_AAZZmajun'],//墟马钧
+    majun: ['zshy_AAZZmajunMB'],//墟马钧
     maliang: ['zshy_AAZZmaliangJMGX'],//墟马良
     manchong: ['zshy_AAZZmanchongYJCM'],//墟满宠
     masu: ['zshy_AAZZmasuYJCM'],//墟马谡
     menghuo: ['zshy_AAZZmenghuoSHZL'],//墟孟获
-    miheng: ['zshy_AAZZmiheng'],//墟祢衡
-    ns_xinnanhua: ['zshy_AAZznanhualaoxian'],//墟南华老仙
+    miheng: ['zshy_AAZZmihengMB'],//墟祢衡
+    ns_xinnanhua: ['zshy_AAZznanhualaoxianMB'],//墟南华老仙
     panshu: ['zshy_AAZZpanshu'],//墟潘淑
     pangde: ['zshy_AAZZpangdeSHZL'],//墟庞德
-    pangdegong: ['zshy_AAZZpangdegong'],//墟庞德公
+    pangdegong: ['zshy_AAZZpangdegongMB'],//墟庞德公
     pangtong: ['zshy_AAZZpangtongSHZL', 'zshy_AAZZpangtongSP', 'zshy_AAZZpangtongSBFM'],//墟庞统、墟SP庞统
     panzhangmazhong: ['zshy_AAZZpanzhangmazhongYJCM'],//墟潘璋马忠
     pengyang: ['zshy_AAZZpengyangOL'],//墟彭羕
@@ -161,9 +161,9 @@ const characterReplace = {
     shen_zhouyu: ['shen_zhouyu', 'zshy_AAZZshenzhouyuSHZL'],//墟神周瑜
     shen_zhugeliang: ['shen_zhugeliang', 'zshy_AAZZshenzhugeliangSHZL'],//墟神诸葛亮
     shibao: ['shibao', 'zshy_AAZZshibaoWDWB'],//墟石苞
-    shichangshi: ['zshy_AAZZshichangshi'],//墟十常侍
+    shichangshi: ['zshy_AAZZshichangshiMB'],//墟十常侍
     simahui: ['zshy_AAZZsimahuiJMGX'],//墟司马徽
-    simashi: ['zshy_AAZZsimashi', 'zshy_AAZZsimashiWDWB'],//墟司马师
+    simashi: ['zshy_AAZZsimashiMB', 'zshy_AAZZsimashiWDWB'],//墟司马师
     simayi: ['zshy_AAZZsimayiBZ', 'zshy_AAZZsimayiWDWB'],//墟司马懿、墟晋司马懿
     simazhao: ['simazhao', 'zshy_AAZZsimazhaoWDWB', 'zshy_AAZZsimazhaoLXXH', 'zshy_AAZZsimazhaoLXXH_shadow'],//墟晋司马昭、墟魏司马昭
     simazhou: ['zshy_AAZZsimazhouWDWB'],//墟司马伷
@@ -171,12 +171,12 @@ const characterReplace = {
     sunchen: ['sunchen', 'zshy_AAZZsunchenJMGX'],//墟孙綝
     sundeng: ['zshy_AAZZsundengYJCM'],//墟孙登
     sunhao: ['sunhao', 'zshy_AAZZsunhaoJMGX'],//墟孙皓
-    sunhanhua: ['zshy_AAZZsunhanhua'],//墟孙寒华
+    sunhanhua: ['zshy_AAZZsunhanhuaMB'],//墟孙寒华
     sunjian: ['zshy_AAZZsunjianSHZL', 'zshy_AAZZsunjianSBFM'],//墟孙坚、墟谋孙坚
     sunliang: ['zshy_AAZZsunliangSHZL'],//墟孙亮
     sunluban: ['zshy_AAZZsunlubanYJCM'],//墟孙鲁班
     sunquan: ['zshy_AAZZsunquanBZ'],//墟孙权
-    sunru: ['zshy_AAZZsunru'],//墟孙茹
+    sunru: ['zshy_AAZZsunruMB'],//墟孙茹
     sunshangxiang: ['zshy_AAZZsunshangxiangBZ', 'zshy_AAZZsunshangxiangSP'],//墟孙尚香、墟SP孙尚香
     sunxiu: ['zshy_AAZZsunxiuYJCM'],//墟孙休
     sunyi: ['sunyi', 'zshy_AAZZsunyiJMGX'],//墟孙翊
@@ -232,7 +232,7 @@ const characterReplace = {
     re_yuanshao: ['zshy_AAZZyuanshaoSHZL'],//墟袁绍
     yuanshu: ['zshy_AAZZyuanshuBZ', 'zshy_AAZZyuanshuSHZL'],//墟袁术、墟SP袁术
     yufan: ['zshy_AAZZyufanYJCM'],//墟虞翻
-    yuji: ['zshy_AAZZyujiSHZL'],//墟于吉
+    yuji: ['zshy_AAZZyujiSHZL', 'zshy_AAZZyujiBSP'],//墟于吉、墟势于吉
     yujin: ['zshy_AAZZyujinYJCM'],//墟于禁
     zhangchunhua: ['zshy_AAZZzhangchunhuaYJCM', 'zshy_AAZZzhangchunhuaWDWB'],//墟魏张春华、墟晋张春华
     zhangfei: ['zshy_AAZZzhangfeiBZ'],//墟张飞
@@ -254,7 +254,7 @@ const characterReplace = {
     zhaoxiang: ['zshy_AAZZzhaoxiangJMGX'],//墟赵襄
     zhaoyun: ['zshy_AAZZzhaoyunBZ', 'zshy_AAZZzhaoyunSP'],//墟赵云、墟SP赵云
     zhenji: ['zshy_AAZZzhenjiBZ'],//墟甄姬
-    zhengxuan: ['zshy_AAZZzhengxuan'],//墟郑玄
+    zhengxuan: ['zshy_AAZZzhengxuanMB'],//墟郑玄
     zhonghui: ['zshy_AAZZzhonghuiYJCM', 'zshy_AAZZzhonghuiYCZS', 'zshy_AAZZzhonghuiBSP', 'zshy_AAYAzhonghui'],//墟钟会、墟族钟会、墟势钟会、烬钟会
     zhongyan: ['zhongyan', 'zshy_AAZZzhongyanWDWB', 'zshy_AAZZzhongyanYCZS'],//墟钟琰、墟族钟琰
     zhongyao: ['zshy_AAZZzhongyaoYJCM', 'zshy_AAZZzhongyaoYCZS'],//墟钟繇、墟族钟繇
@@ -271,7 +271,7 @@ const characterReplace = {
     sp_zhugeliang: ['zshy_AAZZwolongzhugeliangSHZL', 'zshy_AAYAwolongzhugeliang'],//墟卧龙、烬卧龙
     zhugezhan: ['zshy_AAZZzhugezhanSHZL'],//墟诸葛瞻
     zhuhuan: ['zshy_AAZZzhuhuanYJCM'],//墟朱桓
-    zhuji: ['zshy_AAZZzhuji'],//墟朱绩
+    zhuji: ['zshy_AAZZzhujiMB'],//墟朱绩
     zhuran: ['zshy_AAZZzhuranYJCM'],//墟朱然
     zhurong: ['zshy_AAZZzhurongSHZL'],//墟祝融
     zhuzhi: ['zshy_AAZZzhuzhiYJCM'],//墟朱治

@@ -1,5 +1,6 @@
 import { lib, game, ui, get, ai, _status } from '../../../noname.js';
 import { rank } from '../character/rank.js';
+import { applyBodyReference } from './bodyReference.js';
 
 // 信息栏「新武将」点击：打开本体武将详情
 if (typeof window != 'undefined') {
@@ -163,6 +164,13 @@ function applyBackgroundStyle(cacheKey, selector, item, folder) {
 const exposeContext = (func) => func(lib, game, ui, get, ai, _status);
 
 export async function content(config, pack) {
+    // 墟系列武将的本体素材引用：扩展读不到对应素材时按名字+同名武将包回退到本体（详见 bodyReference.js）。
+    try {
+        await applyBodyReference();
+    } catch (error) {
+        console.error('诸神寰宇：本体素材引用失败', error);
+    }
+
     // 武将评级
     lib.rank.rarity.junk.add(...rank.A);
     lib.rank.rarity.rare.add(...rank.S);

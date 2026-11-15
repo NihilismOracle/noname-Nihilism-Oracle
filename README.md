@@ -4,7 +4,7 @@
 
 | 项目 | 当前信息 |
 | --- | --- |
-| 扩展版本 | 1.0.6 |
+| 扩展版本 | 1.0.7 |
 | 更新日期 | 2026-11-15 |
 | 适配本体 | 无名杀 1.11.6.1 |
 | 扩展作者 | 云烫半月霞 |
@@ -24,7 +24,7 @@
 
 本仓库需要配合无名杀本体使用。当前按 **1.11.6.1** 的接口维护，其他本体版本尚未在本仓库中验证。
 
-1. 打开 [Releases 下载页](https://github.com/NihilismOracle/noname-Nihilism-Oracle/releases/latest)，选择显示为 **诸神寰宇1.0.6.zip** 的附件。GitHub实际下载名为 **ZhuShenHuanYu1.0.6.zip**，下载后可改为 **诸神寰宇1.0.6.zip**。
+1. 打开 [Releases 下载页](https://github.com/NihilismOracle/noname-Nihilism-Oracle/releases/latest)，选择显示为 **诸神寰宇1.0.7.zip** 的附件。GitHub实际下载名为 **ZhuShenHuanYu1.0.7.zip**，下载后可改为 **诸神寰宇1.0.7.zip**。
 2. 支持扩展 ZIP 导入的客户端可直接导入该安装包。手动安装时，将压缩包内容解压到本体的 **`extension/诸神寰宇/`** 目录。
 3. 按所用客户端的扩展管理流程启用「诸神寰宇」，然后重启游戏。
 4. 更新已有安装时，先备份旧目录，再用新版本文件替换对应文件。

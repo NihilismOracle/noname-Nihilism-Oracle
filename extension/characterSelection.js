@@ -49,8 +49,9 @@ export async function chooseCharacterConfirmed(player, pool, prompt, forced = tr
             const caption = ui.create.div('.caption');
             caption.textContent = prompt + '（点选武将后，点击“确定”完成选择）';
             dialog.content.insertBefore(caption, dialog.content.firstChild);
-            // hidden 对话框尚未 open，先登记以供本体 get.idDialog 和远端查找。
-            ui.dialogs.add(dialog);
+            // 直接 open：既把对话框挂到页面，也加入 ui.dialogs 供本体 get.idDialog 查找。
+            // 不能只 ui.dialogs.add：本体 Dialog.open 遇到已登记的对话框会跳过 append，对话框不显示、事件卡住。
+            dialog.open();
         }, videoId, list, prompt);
         const next = player.chooseButton(forced)
             .set('dialog', videoId)

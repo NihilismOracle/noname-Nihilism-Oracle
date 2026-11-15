@@ -1,7 +1,7 @@
 import { lib, game, ui, get, ai, _status } from '../../../../noname.js'
 const 袖里乾坤 = {
     //墟曹纯
-    zshy_MBshanjia: {//缮甲
+    zshy_mbshanjia: {//缮甲
         audio: 'shanjia',
         trigger: {
             global: 'phaseZhunbeiBegin',
@@ -34,7 +34,7 @@ const 袖里乾坤 = {
                         });
                     }
                     if (type === 'trick') {
-                        await player.addTempSkill('zshy_MBshanjia_nodis');
+                        await player.addTempSkill('zshy_mbshanjia_nodis');
                     }
                     if (type === 'equip') {
                         await player.changeHujia();
@@ -2582,7 +2582,7 @@ const 袖里乾坤 = {
     },
 
     //墟南华老仙/十常侍
-    zshy_mbdanggu: {
+    zshy_danggu: {
         trigger: {
             player: 'enterGame',
             global: 'phaseBefore'
@@ -2590,13 +2590,13 @@ const 袖里乾坤 = {
         filter(event, player) {
             return event.name != 'phase' || game.phaseNumber == 0;
         },
-        derivation: ['zshy_mbdanggu_faq', 'zshy_mbdanggu_faq2', 'scstaoluan', 'scschiyan', 'scszimou', 'scspicai', 'scsyaozhuo', 'scsxiaolu', 'scskuiji', 'scschihe', 'scsniqu', 'scsmiaoyu'],
+        derivation: ['zshy_danggu_faq', 'zshy_danggu_faq2', 'scstaoluan', 'scschiyan', 'scszimou', 'scspicai', 'scsyaozhuo', 'scsxiaolu', 'scskuiji', 'scschihe', 'scsniqu', 'scsmiaoyu'],
         forced: true,
         unique: true,
         onremove(player) {
-            delete player.storage.zshy_mbdanggu;
-            delete player.storage.zshy_mbdanggu_current;
-            if (lib.skill.zshy_mbdanggu.isSingleShichangshi(player)) {
+            delete player.storage.zshy_danggu;
+            delete player.storage.zshy_danggu_current;
+            if (lib.skill.zshy_danggu.isSingleShichangshi(player)) {
                 game.broadcastAll(function (player2) {
                     player2.name1 = player2.name;
                     player2.skin.name = player2.name;
@@ -2641,7 +2641,7 @@ const 袖里乾坤 = {
                     scs_gaowang: []
                 };
                 if (!get.isLuckyStar(player)) {
-                    var list = lib.skill.zshy_mbdanggu.changshi.map((i2) => i2[0]);
+                    var list = lib.skill.zshy_danggu.changshi.map((i2) => i2[0]);
                     for (var i of list) {
                         var select = list.filter((scs) => scs != i && !_status.changshiMap[i].includes(i));
                         _status.changshiMap[i].addArray(select.randomGets(get.rand(0, select.length)));
@@ -2651,8 +2651,8 @@ const 袖里乾坤 = {
             return _status.changshiMap;
         },
         async content(event, trigger, player) {
-            const list = lib.skill.zshy_mbdanggu.changshi.map((i) => i[0]);
-            player.markAuto('zshy_mbdanggu', list);
+            const list = lib.skill.zshy_danggu.changshi.map((i) => i[0]);
+            player.markAuto('zshy_danggu', list);
             game.broadcastAll(
                 function (player2, list2) {
                     const cards2 = [];
@@ -2670,13 +2670,13 @@ const 袖里乾坤 = {
                 player,
                 list
             );
-            const next = game.createEvent('zshy_mbdanggu_clique');
+            const next = game.createEvent('zshy_danggu_clique');
             next.player = player;
-            next.setContent(lib.skill.zshy_mbdanggu.contentx);
+            next.setContent(lib.skill.zshy_danggu.contentx);
             await next;
         },
         async contentx(event, trigger, player) {
-            let list = player.getStorage('zshy_mbdanggu').slice();
+            let list = player.getStorage('zshy_danggu').slice();
             const first = list.randomRemove();
             const others = list.randomGets(4);
             let result;
@@ -2688,7 +2688,7 @@ const 袖里乾坤 = {
                     scs_hankui: 'scs_bilan',
                     scs_duangui: 'scs_guosheng',
                     scs_guosheng: 'scs_duangui'
-                }, map2 = lib.skill.zshy_mbdanggu.conflictMap(player);
+                }, map2 = lib.skill.zshy_danggu.conflictMap(player);
                 const conflictList = others.filter((changshi) => {
                     if (map[first] && others.some((changshi2) => map[first] == changshi2)) {
                         return map[first] == changshi;
@@ -2719,11 +2719,11 @@ const 袖里乾坤 = {
             if (result?.bool) {
                 const chosen = result.links[0];
                 const skills2 = [];
-                list = lib.skill.zshy_mbdanggu.changshi;
+                list = lib.skill.zshy_danggu.changshi;
                 const changshis = [first, chosen];
-                player.unmarkAuto('zshy_mbdanggu', changshis);
-                player.storage.zshy_mbdanggu_current = changshis;
-                player.markSkill('zshy_mbdanggu_current');
+                player.unmarkAuto('zshy_danggu', changshis);
+                player.storage.zshy_danggu_current = changshis;
+                player.markSkill('zshy_danggu_current');
                 for (const changshi of changshis) {
                     for (const cs of list) {
                         if (changshi == cs[0]) {
@@ -2731,7 +2731,7 @@ const 袖里乾坤 = {
                         }
                     }
                 }
-                if (lib.skill.zshy_mbdanggu.isSingleShichangshi(player)) {
+                if (lib.skill.zshy_danggu.isSingleShichangshi(player)) {
                     game.broadcastAll(
                         function (player2, first2, chosen2) {
                             player2.name1 = first2;
@@ -2755,7 +2755,7 @@ const 袖里乾坤 = {
                 }
                 game.log(player, '选择了常侍', '#y' + get.translation(changshis));
                 if (skills2.length) {
-                    player.addAdditionalSkill('zshy_mbdanggu', skills2);
+                    player.addAdditionalSkill('zshy_danggu', skills2);
                     let str = '';
                     for (const i of skills2) {
                         str += '【' + get.translation(i) + '】、';
@@ -2767,7 +2767,7 @@ const 袖里乾坤 = {
             }
         },
         isSingleShichangshi(player) {
-            var map = lib.skill.zshy_mbdanggu.conflictMap(player);
+            var map = lib.skill.zshy_danggu.conflictMap(player);
             return player.name == 'shichangshi' && (map[player.name1] && map[player.name2] || map[player.name1] && !player.name2 || !player.name1 && !player.name2 || player.name == player.name1 && !player.name2);
         },
         mod: {
@@ -2777,27 +2777,27 @@ const 袖里乾坤 = {
                 }
             },
             aiUseful() {
-                return lib.skill.zshy_mbdanggu.mod.aiValue.apply(this, arguments);
+                return lib.skill.zshy_danggu.mod.aiValue.apply(this, arguments);
             }
         },
         ai: {
-            combo: 'zshy_mbmowang',
+            combo: 'zshy_mowang',
             nokeep: true
         },
         intro: {
             mark(dialog, storage, player) {
                 dialog.addText('剩余常侍');
                 dialog.addSmall([storage, 'character']);
-                if (player.storage.zshy_mbdanggu_current && player.isIn()) {
+                if (player.storage.zshy_danggu_current && player.isIn()) {
                     dialog.addText('当前常侍');
-                    dialog.addSmall([player.storage.zshy_mbdanggu_current, 'character']);
+                    dialog.addSmall([player.storage.zshy_danggu_current, 'character']);
                 }
             }
         }
     },
 
     //墟南华老仙/十常侍
-    zshy_mbmowang: {
+    zshy_mowang: {
         trigger: {
             player: ['dieBefore', 'rest', 'dieAfter']
         },
@@ -2810,13 +2810,13 @@ const 袖里乾坤 = {
             }
             return event.getParent().name != 'giveup' && player.maxHp > 0;
         },
-        derivation: 'zshy_mbmowang_faq',
+        derivation: 'zshy_mowang_faq',
         forced: true,
         forceDie: true,
         forceOut: true,
         direct: true,
         priority: 15,
-        group: ['zshy_mbmowang_die', 'zshy_mbmowang_return'],
+        group: ['zshy_mowang_die', 'zshy_mowang_return'],
         async content(event, trigger, player) {
             if (event.triggername == 'rest') {
                 game.broadcastAll(
@@ -2833,10 +2833,10 @@ const 袖里乾坤 = {
                         }
                     },
                     player,
-                    lib.skill.zshy_mbdanggu.changshi.map((i) => i[0])
+                    lib.skill.zshy_danggu.changshi.map((i) => i[0])
                 );
             } else if (event.triggername == 'dieAfter') {
-                if (player.getStorage('zshy_mbdanggu').length) {
+                if (player.getStorage('zshy_danggu').length) {
                     game.broadcastAll(function () {
                         if (lib.config.background_speak) {
                             game.playAudio('die', 'shichangshiRest');
@@ -2848,9 +2848,9 @@ const 袖里乾坤 = {
                 if (player.isRest()) {
                     trigger.cancel();
                 } else {
-                    if (player.getStorage('zshy_mbdanggu').length) {
-                        player.logSkill('zshy_mbmowang');
-                        trigger.excludeMark.add('zshy_mbdanggu');
+                    if (player.getStorage('zshy_danggu').length) {
+                        player.logSkill('zshy_mowang');
+                        trigger.excludeMark.add('zshy_danggu');
                         trigger.noDieAudio = true;
                         trigger.reserveOut = true;
                     } else {
@@ -2874,18 +2874,18 @@ const 袖里乾坤 = {
             }
         },
         ai: {
-            combo: 'zshy_mbdanggu',
+            combo: 'zshy_danggu',
             neg: true
         },
         subSkill: {
             die: {
-                audio: 'zshy_mbmowang',
+                audio: 'zshy_mowang',
                 trigger: { player: 'phaseAfter' },
                 forced: true,
                 //forceDie: true,
                 async content(event, trigger, player) {
-                    if (lib.skill.zshy_mbdanggu.isSingleShichangshi(player)) {
-                        if (!player.getStorage('zshy_mbdanggu').length) {
+                    if (lib.skill.zshy_danggu.isSingleShichangshi(player)) {
+                        if (!player.getStorage('zshy_danggu').length) {
                             game.broadcastAll(function (player2) {
                                 player2.name1 = player2.name;
                                 player2.skin.name = player2.name + '_dead';
@@ -2903,7 +2903,7 @@ const 袖里乾坤 = {
                             }, player);
                         }
                     }
-                    if (!player.getStorage('zshy_mbdanggu').length) {
+                    if (!player.getStorage('zshy_danggu').length) {
                         await game.delay();
                     }
                     await player.die();
@@ -2917,28 +2917,28 @@ const 袖里乾坤 = {
                 forceDie: true,
                 forceOut: true,
                 filter(event, player) {
-                    return event.player == player && player.hasSkill('zshy_mbdanggu', null, null, false);
+                    return event.player == player && player.hasSkill('zshy_danggu', null, null, false);
                 },
                 async content(event, trigger, player) {
                     game.broadcastAll(function (player2) {
                         if (player2.name1 == 'shichangshi') {
                             player2.smoothAvatar(false);
                             player2.node.avatar.setBackground(player2.name1, 'character');
-                            if (!lib.skill.zshy_mbdanggu.isSingleShichangshi(player2)) {
+                            if (!lib.skill.zshy_danggu.isSingleShichangshi(player2)) {
                                 player2.skin.name = player2.name1;
                             }
                         }
                         if (player2.name2 == 'shichangshi') {
                             player2.smoothAvatar(true);
                             player2.node.avatar2.setBackground(player2.name2, 'character');
-                            if (!lib.skill.zshy_mbdanggu.isSingleShichangshi(player2)) {
+                            if (!lib.skill.zshy_danggu.isSingleShichangshi(player2)) {
                                 player2.skin.name2 = player2.name2;
                             }
                         }
                     }, player);
-                    delete player.storage.zshy_mbdanggu_current;
-                    player.markSkill('zshy_mbdanggu_current');
-                    if (lib.skill.zshy_mbdanggu.isSingleShichangshi(player)) {
+                    delete player.storage.zshy_danggu_current;
+                    player.markSkill('zshy_danggu_current');
+                    if (lib.skill.zshy_danggu.isSingleShichangshi(player)) {
                         game.broadcastAll(function (player2) {
                             player2.name1 = player2.name;
                             player2.skin.name = player2.name;
@@ -2955,9 +2955,9 @@ const 袖里乾坤 = {
                             }
                         }, player);
                     }
-                    const next = game.createEvent('zshy_mbdanggu_clique');
+                    const next = game.createEvent('zshy_danggu_clique');
                     next.player = player;
-                    next.setContent(lib.skill.zshy_mbdanggu.contentx);
+                    next.setContent(lib.skill.zshy_danggu.contentx);
                     await next;
                     await player.draw();
                 }
@@ -2966,19 +2966,19 @@ const 袖里乾坤 = {
     },
 
     //墟张奋/崔令仪/朱绩
-    zshy_mbquchong: {
+    zshy_quchong: {
         audio: 'mbquchong',
         trigger: { player: 'phaseUseBegin' },
         filter(event, player) {
             if (!game.hasPlayer((target) => {
                 return target.hasCards('e', (card) => card.name.startsWith('dagongche_'));
             })) {
-                const num = player.getAllHistory('custom', (evt) => evt.name == 'zshy_mbquchong').length;
+                const num = player.getAllHistory('custom', (evt) => evt.name == 'zshy_quchong').length;
                 const list = (
                     /*get.mode() == "identity" ? [0, 5, 10, 10] : */
                     [0, 2, 5, 5]
                 );
-                return num < 4 && player.countMark('zshy_mbquchong') >= list[num];
+                return num < 4 && player.countMark('zshy_quchong') >= list[num];
             }
             return game.hasPlayer((target) => {
                 return target.hasCards('e', (card) => card.name.startsWith('dagongche_')) && game.hasPlayer(
@@ -3002,7 +3002,7 @@ const 袖里乾坤 = {
         },
         locked: false,
         direct: true,
-        logAudio: (index) => typeof index === 'number' ? 'zshy_mbquchong' + index + '.mp3' : 4,
+        logAudio: (index) => typeof index === 'number' ? 'zshy_quchong' + index + '.mp3' : 4,
         async content(event, trigger, player) {
             if (game.hasPlayer((target) => {
                 return target.hasCards('e', (card) => card.name.startsWith('dagongche_'));
@@ -3055,10 +3055,10 @@ const 袖里乾坤 = {
                     /*get.mode() == "identity" ? [0, 5, 10, 10] : */
                     [0, 2, 5, 5]
                 );
-                const costMark = list[player.getAllHistory('custom', (evt) => evt.name == 'zshy_mbquchong').length];
+                const costMark = list[player.getAllHistory('custom', (evt) => evt.name == 'zshy_quchong').length];
                 const result = await player.chooseButton(
                     [
-                        '###' + get.prompt('zshy_mbquchong') + '###<div class="text center">消耗' + parseFloat(costMark) + '点铸造值，制造任意花色和点数的【大攻车·攻】或【大攻车·守】</div>',
+                        '###' + get.prompt('zshy_quchong') + '###<div class="text center">消耗' + parseFloat(costMark) + '点铸造值，制造任意花色和点数的【大攻车·攻】或【大攻车·守】</div>',
                         [['dagongche_attack', 'dagongche_defend'].map((i) => [i, get.translation(i)]), 'tdnodes'],
                         [
                             lib.suit.slice().reverse().map((i) => [i, get.translation(i)]),
@@ -3080,10 +3080,10 @@ const 袖里乾坤 = {
                     if (!card.storage) {
                         card.storage = {};
                     }
-                    if (typeof card.storage.zshy_mbquchong != 'number') {
-                        card.storage.zshy_mbquchong = card.name == 'dagongche_attack' ? 2 : 3;
+                    if (typeof card.storage.zshy_quchong != 'number') {
+                        card.storage.zshy_quchong = card.name == 'dagongche_attack' ? 2 : 3;
                     }
-                    lib.skill.zshy_mbquchong.broadcast(card);
+                    lib.skill.zshy_quchong.broadcast(card);
                     const resultx = await player.chooseTarget('令一名角色获得' + get.translation(card) + '并使用之', true).set('ai', (target) => {
                         const player2 = get.event().player, att = get.attitude(player2, target);
                         if (!target.canEquip(get.event().card)) {
@@ -3093,11 +3093,11 @@ const 袖里乾坤 = {
                     }).set('card', card).forResult();
                     if (resultx?.bool) {
                         const target = resultx.targets[0];
-                        player.logSkill('zshy_mbquchong', target, null, null, [card.name == 'dagongche_attack' ? 3 : 2]);
+                        player.logSkill('zshy_quchong', target, null, null, [card.name == 'dagongche_attack' ? 3 : 2]);
                         if (costMark > 0) {
-                            player.removeMark('zshy_mbquchong', costMark);
+                            player.removeMark('zshy_quchong', costMark);
                         }
-                        player.getHistory('custom').push({ name: 'zshy_mbquchong' });
+                        player.getHistory('custom').push({ name: 'zshy_quchong' });
                         await target.gain(card, 'gain2');
                         if (get.position(card) == 'h' && get.owner(card) == target && target.hasUseTarget(card)) {
                             await target.chooseUseTarget(card, 'nopopup', false, true);
@@ -3120,7 +3120,7 @@ const 袖里乾坤 = {
             name: '铸造点',
             content: '当前拥有#铸造点'
         },
-        group: ['zshy_mbquchong_recast', 'zshy_mbquchong_remove'],
+        group: ['zshy_quchong_recast', 'zshy_quchong_remove'],
         derivation: ['dagongche_attack', 'dagongche_defend'],
         subSkill: {
             recast: {
@@ -3140,7 +3140,7 @@ const 袖里乾坤 = {
                     await game.cardsGotoSpecial(cards2);
                     await player.showCards(cards2, get.translation(player) + '发动了【渠冲】');
                     game.log(cards2, '被移出了游戏');
-                    player.addMark('zshy_mbquchong', cards2.length);
+                    player.addMark('zshy_quchong', cards2.length);
                 }
             },
             effect: {
@@ -3148,7 +3148,7 @@ const 袖里乾坤 = {
                 trigger: { player: ['loseBefore', 'mbquchongOnRemove', 'equipBefore', 'equipAfter'] },
                 filter(event, player, name) {
                     if (name == 'mbquchongOnRemove') {
-                        return player.hasCards('e', (card) => card.name.startsWith('dagongche_') && card.storage?.zshy_mbquchong <= 0);
+                        return player.hasCards('e', (card) => card.name.startsWith('dagongche_') && card.storage?.zshy_quchong <= 0);
                     }
                     if (event.name == 'equip') {
                         if (name == 'equipBefore') {
@@ -3164,20 +3164,20 @@ const 袖里乾坤 = {
                     if (event.getParent(2).name == 'disableEquip') {
                         return false;
                     }
-                    if (event.getParent(2).name == 'zshy_mbquchong' || event.getParent(3).name == 'zshy_mbquchong_recast') {
+                    if (event.getParent(2).name == 'zshy_quchong' || event.getParent(3).name == 'zshy_quchong_recast') {
                         return false;
                     }
                     return player.hasCards('e', (card) => {
                         if (!event.cards.includes(card)) {
                             return false;
                         }
-                        return card.name.startsWith('dagongche_') && card.storage?.zshy_mbquchong > 0;
+                        return card.name.startsWith('dagongche_') && card.storage?.zshy_quchong > 0;
                     });
                 },
                 forced: true,
                 async content(event, trigger, player) {
                     if (event.triggername == 'mbquchongOnRemove') {
-                        const cards2 = player.getCards('e', (card) => card.name.startsWith('dagongche_') && card.storage?.zshy_mbquchong <= 0);
+                        const cards2 = player.getCards('e', (card) => card.name.startsWith('dagongche_') && card.storage?.zshy_quchong <= 0);
                         await player.lose(cards2, ui.special);
                         for (const card of cards2) {
                             card.fix();
@@ -3200,13 +3200,13 @@ const 袖里乾坤 = {
                             if (!trigger.cards.includes(card)) {
                                 return false;
                             }
-                            return card.name.startsWith('dagongche_') && card.storage?.zshy_mbquchong > 0;
+                            return card.name.startsWith('dagongche_') && card.storage?.zshy_quchong > 0;
                         });
                         trigger.cards.removeArray(cards2);
                         for (const card of cards2) {
-                            card.storage.zshy_mbquchong--;
+                            card.storage.zshy_quchong--;
                             game.log(card, '减少了', '#y1点', '#g耐久值');
-                            lib.skill.zshy_mbquchong.broadcast(card);
+                            lib.skill.zshy_quchong.broadcast(card);
                         }
                         await event.trigger('mbquchongOnRemove');
                     }
@@ -3228,7 +3228,7 @@ const 袖里乾坤 = {
     },
 
     //墟张奋/崔令仪/朱绩
-    zshy_mbxunjie: {
+    zshy_xunjie: {
         audio: 'mbxunjie',
         trigger: { player: 'damageBegin4' },
         filter(event, player) {
@@ -3250,7 +3250,7 @@ const 袖里乾坤 = {
             }
         },
         ai: {
-            combo: 'zshy_mbquchong',
+            combo: 'zshy_quchong',
             effect: {
                 target(card, player, target) {
                     if (player.getHp() <= target.getHp() || game.hasPlayer((current) => {
@@ -3274,7 +3274,7 @@ const 袖里乾坤 = {
     },
 
     //墟张奋/崔令仪/朱绩
-    zshy_mbcaiqiu: {
+    zshy_caiqiu: {
         audio: 'mbcaiqiu',
         logAudio: () => 2,
         trigger: { global: 'roundStart' },
@@ -3296,15 +3296,15 @@ const 袖里乾坤 = {
                 await player.gain(result.links, 'draw');
             }
         },
-        group: 'zshy_mbcaiqiu_effect',
+        group: 'zshy_caiqiu_effect',
         subSkill: {
             effect: {
-                audio: 'zshy_mbcaiqiu',
+                audio: 'zshy_caiqiu',
                 logAudio: () => ['mbcaiqiu3.mp3', 'mbcaiqiu4.mp3'],
                 trigger: { global: 'useCardAfter' },
                 filter(event, player) {
                     return event.player != player && player.hasRoundHistory('gain', (evt) => {
-                        if (evt.getParent().name != 'zshy_mbcaiqiu') {
+                        if (evt.getParent().name != 'zshy_caiqiu') {
                             return false;
                         }
                         return evt.cards?.length && evt.cards.some((card) => card.name == event.card.name);
@@ -3321,7 +3321,7 @@ const 袖里乾坤 = {
     },
 
     //墟张奋/崔令仪/朱绩
-    zshy_mbxishang: {
+    zshy_xishang: {
         audio: 'mbxishang',
         logAudio(event, player) {
             if (!get.nameList(player).includes('mb_cuilingyi')) {
@@ -3399,10 +3399,10 @@ const 袖里乾坤 = {
                 }
             }
         },
-        group: 'zshy_mbxishang_show',
+        group: 'zshy_xishang_show',
         subSkill: {
             show: {
-                audio: 'zshy_mbxishang',
+                audio: 'zshy_xishang',
                 logAudio() {
                     return ['mbxishang7.mp3', 'mbxishang8.mp3'];
                 },
@@ -3427,7 +3427,7 @@ const 袖里乾坤 = {
                     const next = game.createEvent('faceUpCard');
                     next.player = player;
                     next.cards = cards2;
-                    next.skill = 'zshy_mbxishang';
+                    next.skill = 'zshy_xishang';
                     next.setContent(async (event2, trigger2, player2) => {
                         const { cards: cards3 } = event2;
                         game.log(player2, '明置了', cards3);
@@ -3439,14 +3439,14 @@ const 袖里乾坤 = {
                             cards4.forEach((card) => card.addGaintag('faceup_tag'));
                         }, cards3);
                     });
-                    player.markSkill('zshy_mbxishang');
+                    player.markSkill('zshy_xishang');
                 }
             }
         }
     },
 
     //墟张奋/崔令仪/朱绩
-    zshy_potjiezhu: {
+    zshy_jiezhu: {
         audio: 'potjiezhu',
         audioname: ['zhuji_shadow'],
         enable: 'chooseToUse',
@@ -3475,14 +3475,14 @@ const 袖里乾坤 = {
             return null;
         },
         viewAsFilter(player) {
-            return get.info('zshy_potjiezhu').getOnlyNum(player, true) >= 0 && player.countDiscardableCards(player, 'h') > 0;
+            return get.info('zshy_jiezhu').getOnlyNum(player, true) >= 0 && player.countDiscardableCards(player, 'h') > 0;
         },
         selectTarget() {
             return [1, ui.selected.cards.length];
         },
         selectCard() {
             const player = get.player();
-            return player.countCards('h') - get.info('zshy_potjiezhu').getOnlyNum(player, true);
+            return player.countCards('h') - get.info('zshy_jiezhu').getOnlyNum(player, true);
         },
         filterCard: lib.filter.cardDiscardable,
         usable: 1,
@@ -3495,14 +3495,14 @@ const 袖里乾坤 = {
             color: 'none',
             cards: [],
             storage: {
-                zshy_potjiezhu: true
+                zshy_jiezhu: true
             }
         },
         ai: {
             order: 4,
             result: {
                 player(player) {
-                    const info = get.info('zshy_potjiezhu');
+                    const info = get.info('zshy_jiezhu');
                     const num = player.countCards('h') - info.getOnlyNum(player, true);
                     if (num <= 0 || num > 2) return 0;
                     return game.hasPlayer((target) => target != player && get.attitude(player, target) < 0) ? 1 : 0;
@@ -3514,7 +3514,7 @@ const 袖里乾坤 = {
         },
         ignoreMod: true,
         async precontent(event, trigger, player) {
-            const skill = 'zshy_potjiezhu';
+            const skill = 'zshy_jiezhu';
             player.logSkill(skill);
             const { cards: cards2 } = event.result;
             const num = cards2.length;
@@ -3524,7 +3524,7 @@ const 袖里乾坤 = {
                 player2.when({ global: 'useCardAfter' }).filter((evt) => evt.card == card).then(async (event2, trigger2, player3) => {
                     const { targets, card: card2 } = trigger2;
                     if (targets.length == num && targets.every((target) => target.hasHistory('damage', (evt) => evt.card == card2))) {
-                        const num2 = get.info('zshy_potjiezhu').getOnlyNum(player3);
+                        const num2 = get.info('zshy_jiezhu').getOnlyNum(player3);
                         if (num2 > 0) {
                             await player3.drawTo(num2);
                         }
@@ -3536,7 +3536,7 @@ const 袖里乾坤 = {
         locked: false,
         mod: {
             targetInRange(card, player, target) {
-                if (card.storage?.zshy_potjiezhu) {
+                if (card.storage?.zshy_jiezhu) {
                     return true;
                 }
             }
@@ -3544,11 +3544,11 @@ const 袖里乾坤 = {
     },
 
     //墟张奋/崔令仪/朱绩
-    zshy_pothuanshi: {
+    zshy_mbhuanshi: {
         audio: 'pothuanshi',
         dutySkill: true,
         locked: false,
-        group: ['zshy_pothuanshi_achieve', 'zshy_pothuanshi_damage'],
+        group: ['zshy_mbhuanshi_achieve', 'zshy_mbhuanshi_damage'],
         mod: {
             cardEnabled(card, player) {
                 if (get.name(card) == 'jiu' && !player.isDying()) {
@@ -3606,7 +3606,7 @@ const 袖里乾坤 = {
                 skillAnimation: true,
                 animationColor: 'wood',
                 async content(event, trigger, player) {
-                    player.awakenSkill('zshy_pothuanshi');
+                    player.awakenSkill('zshy_mbhuanshi');
                     game.log(player, '成功完成使命');
                     player.changeSkin({ characterName: 'zhuji' }, 'zhuji_shadow');
                     game.broadcastAll(
@@ -3628,7 +3628,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbjinzu: {
+    zshy_jinzu: {
         audio: 'mbjinzu',
         enable: 'phaseUse',
         usable: 1,
@@ -3658,10 +3658,10 @@ const 袖里乾坤 = {
                 await player.showCards(card, get.translation(player) + '发动了【劲镞】');
                 await player.modedDiscard(card);
                 const stat = player.getStat().skill;
-                if (stat.zshy_mbjinzu) {
-                    delete stat.zshy_mbjinzu;
+                if (stat.zshy_jinzu) {
+                    delete stat.zshy_jinzu;
                 }
-                const skill = 'zshy_mbjinzu_effect';
+                const skill = 'zshy_jinzu_effect';
                 player.storage[skill] ??= /* @__PURE__ */ new Map();
                 player.storage[skill].set(target, !player.storage[skill].has(target) ? 1 : player.storage[skill].get(target) + 1);
                 player.addTempSkill(skill);
@@ -3690,12 +3690,12 @@ const 袖里乾坤 = {
                     lose_list
                 }).setContent('discardMultiple');
                 const stat = player.getStat().skill;
-                if (stat.zshy_mbjinzu) {
-                    delete stat.zshy_mbjinzu;
+                if (stat.zshy_jinzu) {
+                    delete stat.zshy_jinzu;
                 }
             }
             if (result.cards.some((cardx) => get.number(cardx) <= number) && result.cards.some((cardx) => get.number(cardx) >= number)) {
-                const skill = 'zshy_mbjinzu_effect';
+                const skill = 'zshy_jinzu_effect';
                 player.storage[skill] ??= /* @__PURE__ */ new Map();
                 player.storage[skill].set(target, !player.storage[skill].has(target) ? 1 : player.storage[skill].get(target) + 1);
                 player.addTempSkill(skill);
@@ -3706,7 +3706,7 @@ const 袖里乾坤 = {
             effect: {
                 charlotte: true,
                 onremove: true,
-                audio: 'zshy_mbjinzu',
+                audio: 'zshy_jinzu',
                 trigger: { player: 'useCard' },
                 filter(event, player) {
                     return event.card?.name == 'sha';
@@ -3729,7 +3729,7 @@ const 袖里乾坤 = {
                 ai: {
                     directHit_ai: true,
                     skillTagFilter(player, tag, arg) {
-                        if (tag == 'directHit_ai' && (arg?.card?.name !== 'sha' || !player.getStorage('zshy_mbjinzu_effect', /* @__PURE__ */ new Map())?.has(arg?.target))) {
+                        if (tag == 'directHit_ai' && (arg?.card?.name !== 'sha' || !player.getStorage('zshy_jinzu_effect', /* @__PURE__ */ new Map())?.has(arg?.target))) {
                             return false;
                         }
                     }
@@ -3749,16 +3749,16 @@ const 袖里乾坤 = {
                 targetprompt2: (target) => {
                     const player = get.player(), card = get.card();
                     if (card?.name == 'sha') {
-                        if (player.getStorage('zshy_mbjinzu_effect', /* @__PURE__ */ new Map())?.has(target)) {
-                            return `强命+${player.getStorage("zshy_mbjinzu_effect", /* @__PURE__ */ new Map()).get(target)}`;
+                        if (player.getStorage('zshy_jinzu_effect', /* @__PURE__ */ new Map())?.has(target)) {
+                            return `强命+${player.getStorage("zshy_jinzu_effect", /* @__PURE__ */ new Map()).get(target)}`;
                         }
                     }
                 },
                 onChooseToUse(event) {
-                    event.targetprompt2.add(lib.skill.zshy_mbjinzu_effect.targetprompt2);
+                    event.targetprompt2.add(lib.skill.zshy_jinzu_effect.targetprompt2);
                 },
                 onChooseTarget(event) {
-                    event.targetprompt2.add(lib.skill.zshy_mbjinzu_effect.targetprompt2);
+                    event.targetprompt2.add(lib.skill.zshy_jinzu_effect.targetprompt2);
                 }
             }
         },
@@ -3769,7 +3769,7 @@ const 袖里乾坤 = {
                     return 0.5;
                 } else if (player.countCards('hs', (card) => get.tag(card, 'draw'))) {
                     return 0;
-                } else if (!game.hasPlayer((target) => target != player && get.attitude(player, target) < 0 && lib.skill.zshy_mbjinzu.ai.result.target(player, target) < 0)) {
+                } else if (!game.hasPlayer((target) => target != player && get.attitude(player, target) < 0 && lib.skill.zshy_jinzu.ai.result.target(player, target) < 0)) {
                     return 0;
                 }
                 return 9;
@@ -3788,7 +3788,7 @@ const 袖里乾坤 = {
                             return 0;
                         } else if (get.effect(target, { name: 'sha' }, player, player) < 0) {
                             return 0;
-                        } else if (player.hasHistory('useSkill', (evt) => evt.skill == 'zshy_mbanxian') && !player.canUse('sha', target, true, true)) {
+                        } else if (player.hasHistory('useSkill', (evt) => evt.skill == 'zshy_anxian') && !player.canUse('sha', target, true, true)) {
                             return 0;
                         }
                     }
@@ -3799,7 +3799,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbanxian: {
+    zshy_anxian: {
         audio: 'mbanxian',
         trigger: {
             player: 'loseAfter',
@@ -3840,14 +3840,14 @@ const 袖里乾坤 = {
                 await player.chooseUseTarget(cards2[0], true, false, 'nodistance');
             }
         },
-        //group: "zshy_mbanxian_draw",
+        //group: "zshy_anxian_draw",
         subSkill: {
             draw: {
                 trigger: {
                     source: 'damageSource'
                 },
                 filter(event, player) {
-                    return event?.card?.name == 'sha' && event.getParent('zshy_mbanxian', true);
+                    return event?.card?.name == 'sha' && event.getParent('zshy_anxian', true);
                 },
                 popup: false,
                 forced: true,
@@ -3860,7 +3860,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbbingfa: {
+    zshy_bingfa: {
         audio: 'mbbingfa',
         logAudio(event) {
             if (typeof event == 'number') {
@@ -3891,8 +3891,8 @@ const 袖里乾坤 = {
             const map = await game.chooseAnyOL(targets, get.info(name).chooseLvfa, [targets, player, lvfas]).forResult();
             const tickets = [0, 0, 0, 0];
             for (const target of targets) {
-                if (target != player && target.hasSkill('zshy_mbbingfa_control')) {
-                    target.removeSkill('zshy_mbbingfa_control');
+                if (target != player && target.hasSkill('zshy_bingfa_control')) {
+                    target.removeSkill('zshy_bingfa_control');
                 }
                 const result = map.get(target);
                 if (result?.bool && result.links?.length) {
@@ -3921,7 +3921,7 @@ const 袖里乾坤 = {
         },
         effect: [
             async (event, trigger, player) => {
-                player.removeTip('zshy_mbbingfa_0');
+                player.removeTip('zshy_bingfa_0');
                 const players = game.filterPlayer(() => true);
                 let max = 0, targets = [];
                 for (const target of players) {
@@ -3940,12 +3940,12 @@ const 袖里乾坤 = {
                     await target.damage(2, 'nosource');
                 };
                 if (targets.length) {
-                    player.logSkill('zshy_mbbingfa', targets, null, null, [get.rand(3, 4)]);
+                    player.logSkill('zshy_bingfa', targets, null, null, [get.rand(3, 4)]);
                     await game.doAsyncInOrder(targets, func);
                 }
             },
             async (event, trigger, player) => {
-                player.removeTip('zshy_mbbingfa_1');
+                player.removeTip('zshy_bingfa_1');
                 const players = game.filterPlayer(() => true);
                 let max = 0, targets = [];
                 for (const target of players) {
@@ -3961,16 +3961,16 @@ const 袖里乾坤 = {
                     }
                 }
                 const func = async (target) => {
-                    target.addSkill('zshy_mbbingfa_limit');
-                    target.addMark('zshy_mbbingfa_limit', 2, false);
+                    target.addSkill('zshy_bingfa_limit');
+                    target.addMark('zshy_bingfa_limit', 2, false);
                 };
                 if (targets.length) {
-                    player.logSkill('zshy_mbbingfa', targets, null, null, [get.rand(3, 4)]);
+                    player.logSkill('zshy_bingfa', targets, null, null, [get.rand(3, 4)]);
                     await game.doAsyncInOrder(targets, func);
                 }
             },
             async (event, trigger, player) => {
-                player.removeTip('zshy_mbbingfa_2');
+                player.removeTip('zshy_bingfa_2');
                 const players = game.filterPlayer(() => true);
                 let max = 0, targets = [];
                 for (const target of players) {
@@ -3987,12 +3987,12 @@ const 袖里乾坤 = {
                     await target.loseMaxHp();
                 };
                 if (targets.length) {
-                    player.logSkill('zshy_mbbingfa', targets, null, null, [get.rand(3, 4)]);
+                    player.logSkill('zshy_bingfa', targets, null, null, [get.rand(3, 4)]);
                     await game.doAsyncInOrder(targets, func);
                 }
             },
             async (event, trigger, player) => {
-                player.removeTip('zshy_mbbingfa_3');
+                player.removeTip('zshy_bingfa_3');
                 const players = game.filterPlayer(() => true);
                 let max = 0, targets = [];
                 for (const target of players) {
@@ -4017,7 +4017,7 @@ const 袖里乾坤 = {
                     }
                 };
                 if (targets.length) {
-                    player.logSkill('zshy_mbbingfa', targets, null, null, [get.rand(3, 4)]);
+                    player.logSkill('zshy_bingfa', targets, null, null, [get.rand(3, 4)]);
                     await game.doAsyncInOrder(targets, func);
                 }
             }
@@ -4028,12 +4028,12 @@ const 袖里乾坤 = {
                     return false;
                 }
                 if (current == player) {
-                    if (current.getStorage('zshy_mbbingfa_control').length) {
+                    if (current.getStorage('zshy_bingfa_control').length) {
                         return false;
                     }
                     return true;
                 }
-                return current.getStorage('zshy_mbbingfa_control').includes(player);
+                return current.getStorage('zshy_bingfa_control').includes(player);
             });
             if (num > 1) {
                 const event = get.event();
@@ -4153,7 +4153,7 @@ const 袖里乾坤 = {
                 charlotte: true,
                 mod: {
                     maxHandcard(player, num) {
-                        return num - player.countMark('zshy_mbbingfa_limit');
+                        return num - player.countMark('zshy_bingfa_limit');
                     }
                 }
             },
@@ -4169,7 +4169,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbshuxing: {
+    zshy_shuxing: {
         audio: 'mbshuxing',
         trigger: {
             global: 'useCardToTarget'
@@ -4181,7 +4181,7 @@ const 袖里乾坤 = {
             if (event.target == player || event.card.name != 'sha') {
                 return false;
             }
-            return !player.getStorage('zshy_mbshuxing_used').includes(event.target);
+            return !player.getStorage('zshy_shuxing_used').includes(event.target);
         },
         logTarget: 'target',
         check(event, player) {
@@ -4203,9 +4203,9 @@ const 袖里乾坤 = {
             return hasShan(event.target);
         },
         async content(event, trigger, player) {
-            player.addTempSkill('zshy_mbshuxing_used');
+            player.addTempSkill('zshy_shuxing_used');
             const evt = trigger.getParent(), target = trigger.target;
-            player.markAuto('zshy_mbshuxing_used', target);
+            player.markAuto('zshy_shuxing_used', target);
             if (evt) {
                 evt.excluded.add(target);
             }
@@ -4228,7 +4228,7 @@ const 袖里乾坤 = {
                     ]
                 ],
                 true
-            ).set('canGive', !target.hasSkill('zshy_mbbingfa_control')).set('source', player).set('filterButton', (button) => {
+            ).set('canGive', !target.hasSkill('zshy_bingfa_control')).set('source', player).set('filterButton', (button) => {
                 const { player: player2, canGive, source } = get.event();
                 if (button.link == 'losehp') {
                     return true;
@@ -4246,9 +4246,9 @@ const 袖里乾坤 = {
                     if (cards3?.length) {
                         await target.give(cards3, player);
                     }
-                    if (!target.hasSkill('zshy_mbbingfa_control')) {
-                        target.addSkill('zshy_mbbingfa_control');
-                        target.markAuto('zshy_mbbingfa_control', player);
+                    if (!target.hasSkill('zshy_bingfa_control')) {
+                        target.addSkill('zshy_bingfa_control');
+                        target.markAuto('zshy_bingfa_control', player);
                     }
                 }
             }
@@ -4262,7 +4262,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbshiju: {
+    zshy_shiju: {
         audio: 'mbshiju',
         trigger: {
             player: 'useCardAfter'
@@ -4298,12 +4298,12 @@ const 袖里乾坤 = {
             if (bool1 && bool2) {
                 player.popup('乘势', 'fire');
                 if (bool3) {
-                    if (!player.hasSkill('zshy_mbkubai', null, null, false)) {
-                        await player.addSkills('zshy_mbkubai');
-                    } else if (player.countMark('zshy_mbkubai') < 2) {
+                    if (!player.hasSkill('zshy_kubai', null, null, false)) {
+                        await player.addSkills('zshy_kubai');
+                    } else if (player.countMark('zshy_kubai') < 2) {
                         game.log(player, '升级了', '#g【枯白】');
-                        player.addMark('zshy_mbkubai', 1, false);
-                        get.info('zshy_mbkubai').init(player, 'zshy_mbkubai');
+                        player.addMark('zshy_kubai', 1, false);
+                        get.info('zshy_kubai').init(player, 'zshy_kubai');
                     }
                 }
             }
@@ -4335,7 +4335,7 @@ const 袖里乾坤 = {
                 }
             }
         },
-        derivation: ['zshy_mbkubai'],
+        derivation: ['zshy_kubai'],
         subSkill: {
             record: {
                 charlotte: true,
@@ -4383,7 +4383,7 @@ const 袖里乾坤 = {
                         player.markSkill(skill);
                         game.broadcastAll(
                             (evt2, player2) => {
-                                const mark = player2.marks.zshy_mbshiju_record;
+                                const mark = player2.marks.zshy_shiju_record;
                                 if (mark) {
                                     mark.firstChild.innerHTML = get.translation(get.type2(evt2.card));
                                 }
@@ -4401,11 +4401,11 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbchongsi: {
+    zshy_chongsi: {
         audio: 'mbchongsi',
         enable: 'phaseUse',
         filter(event, player) {
-            if (player.hasSkill('zshy_mbchongsi_damage')) {
+            if (player.hasSkill('zshy_chongsi_damage')) {
                 return false;
             }
             return game.hasPlayer((current) => current != player);
@@ -4458,7 +4458,7 @@ const 袖里乾坤 = {
             },
             backup(links, player) {
                 return {
-                    audio: 'zshy_mbchongsi',
+                    audio: 'zshy_chongsi',
                     filterTarget: lib.filter.notMe,
                     ai1: () => 1,
                     ai2(target) {
@@ -4513,7 +4513,7 @@ const 袖里乾坤 = {
                                 }
                             }
                             if (link2 == 'damage' || mustDamage) {
-                                current.addTempSkill('zshy_mbchongsi_damage', { global: 'roundStart' });
+                                current.addTempSkill('zshy_chongsi_damage', { global: 'roundStart' });
                                 const targets = game.filterPlayer((currentx) => {
                                     return currentx == current || Boolean(currentx.getEquip('cz_liulongcanjia'));
                                 });
@@ -4608,7 +4608,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbpeidong: {
+    zshy_peidong: {
         audio: 'mbpeidong',
         logAudio(event) {
             if (typeof event == 'number') {
@@ -4706,7 +4706,7 @@ const 袖里乾坤 = {
             },
             backup(links, player) {
                 const name = links[0][2];
-                return get.copy(get.info(`zshy_mbpeidong_${name}`));
+                return get.copy(get.info(`zshy_peidong_${name}`));
             }
         },
         hiddenCard(player, name) {
@@ -4795,7 +4795,7 @@ const 袖里乾坤 = {
                 selectCard: -1,
                 log: false,
                 async precontent(event, trigger, player) {
-                    player.logSkill('zshy_mbpeidong', null, null, null, [1]);
+                    player.logSkill('zshy_peidong', null, null, null, [1]);
                     const target = player.getNext();
                     if (!target?.isIn()) {
                         return;
@@ -4857,7 +4857,7 @@ const 袖里乾坤 = {
                 },
                 log: false,
                 async content(event, trigger, player) {
-                    player.logSkill('zshy_mbpeidong', null, null, null, [2]);
+                    player.logSkill('zshy_peidong', null, null, null, [2]);
                     const { target } = event;
                     const cards2 = target.getGainableCards(player, 'ej', (card2) => card2.name == 'cz_liulongcanjia');
                     if (cards2.length) {
@@ -4872,11 +4872,11 @@ const 袖里乾坤 = {
                         return;
                     }
                     game.broadcastAll((card2) => {
-                        lib.skill.zshy_mbpeidong_use.viewAs = card2;
-                        lib.skill.zshy_mbpeidong_use.prompt = `选择${get.translation(card2)}的目标`;
+                        lib.skill.zshy_peidong_use.viewAs = card2;
+                        lib.skill.zshy_peidong_use.prompt = `选择${get.translation(card2)}的目标`;
                     }, card);
-                    evt.set('_backupevent', 'zshy_mbpeidong_use');
-                    evt.backup('zshy_mbpeidong_use');
+                    evt.set('_backupevent', 'zshy_peidong_use');
+                    evt.backup('zshy_peidong_use');
                     evt.set('openskilldialog', `选择${get.translation(card)}的目标`);
                     evt.set('norestore', true);
                     evt.set('custom', {
@@ -4918,7 +4918,7 @@ const 袖里乾坤 = {
                     return 1;
                 },
                 async content(event, trigger, player) {
-                    player.logSkill('zshy_mbpeidong', null, null, null, [3]);
+                    player.logSkill('zshy_peidong', null, null, null, [3]);
                     const filter = (card2) => card2.name == 'cz_liulongcanjia';
                     if (event.cards?.length) {
                         await player.lose(event.cards, ui.ordering);
@@ -4936,11 +4936,11 @@ const 袖里乾坤 = {
                         return;
                     }
                     game.broadcastAll((card2) => {
-                        lib.skill.zshy_mbpeidong_use.viewAs = card2;
-                        lib.skill.zshy_mbpeidong_use.prompt = `选择${get.translation(card2)}的目标`;
+                        lib.skill.zshy_peidong_use.viewAs = card2;
+                        lib.skill.zshy_peidong_use.prompt = `选择${get.translation(card2)}的目标`;
                     }, card);
-                    evt.set('_backupevent', 'zshy_mbpeidong_use');
-                    evt.backup('zshy_mbpeidong_use');
+                    evt.set('_backupevent', 'zshy_peidong_use');
+                    evt.backup('zshy_peidong_use');
                     evt.set('openskilldialog', `选择${get.translation(card)}的目标`);
                     evt.set('norestore', true);
                     evt.set('custom', {
@@ -4964,7 +4964,7 @@ const 袖里乾坤 = {
                 log: false,
                 manualConfirm: true,
                 async precontent(event, trigger, player) {
-                    player.logSkill('zshy_mbpeidong', null, null, null, [4]);
+                    player.logSkill('zshy_peidong', null, null, null, [4]);
                     game.broadcastAll(() => {
                         _status.addedLiulong = true;
                     });
@@ -4979,7 +4979,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbshouyue: {
+    zshy_shouyue: {
         audio: 'mbshouyue',
         trigger: { player: ['phaseDrawBegin', 'changeHpAfter'] },
         filter(event, player) {
@@ -5075,7 +5075,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbdieyin: {
+    zshy_dieyin: {
         audio: 'mbdieyin',
         enable: 'phaseUse',
         usable: 1,
@@ -5098,14 +5098,14 @@ const 袖里乾坤 = {
             },
             backup(links, player) {
                 return {
-                    audio: 'zshy_mbdieyin',
+                    audio: 'zshy_dieyin',
                     phase: links[0][2].slice(5),
                     async content(event, trigger, player2) {
                         const { phase } = get.info(event.name);
                         await player2.turnOver(true);
                         const evt = event.getParent('phase', true, true);
                         if (evt?.name == 'phase') {
-                            evt.phaseList.splice(evt.num + 1, 0, `${phase}|zshy_mbdieyin`);
+                            evt.phaseList.splice(evt.num + 1, 0, `${phase}|zshy_dieyin`);
                         }
                     }
                 };
@@ -5115,7 +5115,7 @@ const 袖里乾坤 = {
             order: 1,
             result: {
                 player(player) {
-                    if (player.hasSkill('zshy_mbshouyue')) {
+                    if (player.hasSkill('zshy_shouyue')) {
                         return 1;
                     }
                     return 0;
@@ -5128,7 +5128,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbgeyuan: {
+    zshy_geyuan: {
         audio: 'mbgeyuan',
         init(player, skill) {
             let index = 0;
@@ -5145,7 +5145,7 @@ const 袖里乾坤 = {
         intro: {
             markcount(storage) {
                 storage = storage || 0;
-                return Number(get.info('zshy_mbgeyuan').PI[storage]);
+                return Number(get.info('zshy_geyuan').PI[storage]);
             },
             mark(dialog, storage, player, evt, skill) {
                 let str = get.info(skill).getNumList(storage);
@@ -5154,40 +5154,40 @@ const 袖里乾坤 = {
         },
         mod: {
             aiOrder(player, card, order) {
-                let number = get.number(card, player), index = player.getStorage('zshy_mbgeyuan', 0);
-                let num = Number(get.info('zshy_mbgeyuan').PI[index]);
+                let number = get.number(card, player), index = player.getStorage('zshy_geyuan', 0);
+                let num = Number(get.info('zshy_geyuan').PI[index]);
                 if (typeof number !== 'number') {
                     return;
                 }
-                if (num == number || player.hasSkill('zshy_mbchongcha') && num == 0 && number > 9) {
+                if (num == number || player.hasSkill('zshy_chongcha') && num == 0 && number > 9) {
                     return order + 10;
                 }
             },
             aiUseful(player, card, useful) {
-                let number = get.number(card, player), index = player.getStorage('zshy_mbgeyuan', 0);
-                let num = Number(get.info('zshy_mbgeyuan').PI[index]);
+                let number = get.number(card, player), index = player.getStorage('zshy_geyuan', 0);
+                let num = Number(get.info('zshy_geyuan').PI[index]);
                 if (typeof number !== 'number') {
                     return;
                 }
-                if (num == number || player.hasSkill('zshy_mbchongcha') && num == 0 && number > 9) {
+                if (num == number || player.hasSkill('zshy_chongcha') && num == 0 && number > 9) {
                     return useful + 10;
                 }
             }
         },
         trigger: { player: 'useCard' },
         filter(event, player) {
-            let index = player.getStorage('zshy_mbgeyuan', 0);
-            let num = Number(get.info('zshy_mbgeyuan').PI[index]), number = get.number(event.card);
+            let index = player.getStorage('zshy_geyuan', 0);
+            let num = Number(get.info('zshy_geyuan').PI[index]), number = get.number(event.card);
             if (num == number) {
                 return true;
             }
             if (typeof number == 'number' && number > 9) {
-                return player.hasSkill('zshy_mbchongcha') && num == 0;
+                return player.hasSkill('zshy_chongcha') && num == 0;
             }
             return false;
         },
         prompt2(event, player) {
-            let draw = Math.min(3, player.getHistory('useSkill', (evt) => evt.skill === 'zshy_mbgeyuan').length + 1);
+            let draw = Math.min(3, player.getHistory('useSkill', (evt) => evt.skill === 'zshy_geyuan').length + 1);
             return `摸${get.cnNumber(draw)}张牌并调整“割圆”中X的值`;
         },
         frequent: 'check',
@@ -5206,7 +5206,7 @@ const 袖里乾坤 = {
             player.addTip(event.name, `${get.translation(event.name)} ${getNumList(index, true)}`);
         },
         getNumList(index, isTip) {
-            const { PI } = get.info('zshy_mbgeyuan');
+            const { PI } = get.info('zshy_geyuan');
             index = index || 0;
             function getNexts(index2) {
                 let result = '', cnt = 0;
@@ -5226,7 +5226,7 @@ const 袖里乾坤 = {
     },
 
     //墟曹兴/卢毓/张芝/曹植/周瑜/刘徽
-    zshy_mbchongcha: {
+    zshy_chongcha: {
         audio: 'mbchongcha',
         mod: {
             ignoredHandcard(card, player) {
@@ -5247,7 +5247,7 @@ const 袖里乾坤 = {
         enable: 'phaseUse',
         usable: 1,
         filter(event, player) {
-            if (!player.hasSkill('zshy_mbgeyuan', null, false, false)) {
+            if (!player.hasSkill('zshy_geyuan', null, false, false)) {
                 return false;
             }
             return player.countDiscardableCards(player, 'he') > 0;
@@ -5256,8 +5256,8 @@ const 袖里乾坤 = {
         filterCard: lib.filter.cardDiscardable,
         check(card) {
             const player = get.player();
-            let index = player.getStorage('zshy_mbgeyuan', 0);
-            const { getNumList } = get.info('zshy_mbgeyuan');
+            let index = player.getStorage('zshy_geyuan', 0);
+            const { getNumList } = get.info('zshy_geyuan');
             let next = Number(getNumList(index, true).slice(1, 2));
             if (get.number(card, player) == next) {
                 return 0;
@@ -5267,29 +5267,29 @@ const 袖里乾坤 = {
         selectTarget: 0,
         prompt(event) {
             const player = get.player();
-            let index = player.getStorage('zshy_mbgeyuan', 0);
-            const { PI, getNumList } = get.info('zshy_mbgeyuan');
+            let index = player.getStorage('zshy_geyuan', 0);
+            const { PI, getNumList } = get.info('zshy_geyuan');
             let num = PI[index], next = getNumList(index, true).slice(1, 2);
             return `弃一张牌并调整“割圆”中X的值（当前为${num}，调整后为${next}）`;
         },
         async content(event, trigger, player) {
-            let index = player.getStorage('zshy_mbgeyuan', 0);
+            let index = player.getStorage('zshy_geyuan', 0);
             index++;
-            const { PI, getNumList } = get.info('zshy_mbgeyuan');
+            const { PI, getNumList } = get.info('zshy_geyuan');
             if (index >= PI.length) {
                 index -= PI.length;
             }
-            player.setStorage('zshy_mbgeyuan', index, true);
-            player.addTip('zshy_mbgeyuan', `${get.translation("zshy_mbgeyuan")} ${getNumList(index, true)}`);
+            player.setStorage('zshy_geyuan', index, true);
+            player.addTip('zshy_geyuan', `${get.translation("zshy_geyuan")} ${getNumList(index, true)}`);
         },
         ai: {
             order(item, player) {
                 player = player || get.player();
-                let index = player.getStorage('zshy_mbgeyuan', 0), hs = player.getCards('hs', (card) => player.getUseValue(card));
+                let index = player.getStorage('zshy_geyuan', 0), hs = player.getCards('hs', (card) => player.getUseValue(card));
                 if (!hs.length) {
                     return 0;
                 }
-                const { getNumList } = get.info('zshy_mbgeyuan');
+                const { getNumList } = get.info('zshy_geyuan');
                 const numList = getNumList(index, true);
                 let first = Number(numList.slice(0, 1)), next = Number(numList.slice(1, 2));
                 if (hs.some((card) => get.number(card, player) == first)) {
@@ -5306,7 +5306,7 @@ const 袖里乾坤 = {
     },
 
     //墟彻里吉
-    zshy_mbqucheng: {
+    zshy_qucheng: {
         audio: 'mbqucheng',
         forced: true,
         mod: {
@@ -5317,7 +5317,7 @@ const 袖里乾坤 = {
             },
             playerEnabled(card, player, target) {
                 const targets = [player.next, player.previous];
-                if (!card?.storage?.zshy_mbqucheng_next && !card?.storage?.zshy_mbqucheng_previous && !targets.includes(target) && card.name == 'sha') {
+                if (!card?.storage?.zshy_qucheng_next && !card?.storage?.zshy_qucheng_previous && !targets.includes(target) && card.name == 'sha') {
                     return false;
                 }
             }
@@ -5332,24 +5332,24 @@ const 袖里乾坤 = {
             if (card.name != 'sha' || player.hasHistory('sourceDamage', (evt) => evt.card == card)) {
                 return false;
             }
-            if (!card.storage?.zshy_mbqucheng_next && !card.storage?.zshy_mbqucheng_previous) {
+            if (!card.storage?.zshy_qucheng_next && !card.storage?.zshy_qucheng_previous) {
                 return [target.next, target.previous].some((t) => t != player);
             }
             let targetx, cardx;
-            if (card.storage?.zshy_mbqucheng_next) {
+            if (card.storage?.zshy_qucheng_next) {
                 targetx = target.next;
-                cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_mbqucheng_next: true } });
+                cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_qucheng_next: true } });
             }
-            if (card.storage?.zshy_mbqucheng_previous) {
+            if (card.storage?.zshy_qucheng_previous) {
                 targetx = target.previous;
-                cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_mbqucheng_previous: true } });
+                cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_qucheng_previous: true } });
             }
             return player != targetx && player.canUse(cardx, targetx, false);
         },
         async content(event, trigger, player) {
             const card = trigger.card, target = trigger.targets[0];
             let targetx, cardx;
-            if (!card.storage?.zshy_mbqucheng_next && !card.storage?.zshy_mbqucheng_previous) {
+            if (!card.storage?.zshy_qucheng_next && !card.storage?.zshy_qucheng_previous) {
                 let result;
                 if (player != target.next && player != target.previous) {
                     result = await player.chooseControl({
@@ -5362,18 +5362,18 @@ const 袖里乾坤 = {
                 }
                 if (player == target.next || typeof result?.control == 'string' && result.control == '上家') {
                     targetx = target.previous;
-                    cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_mbqucheng_previous: true } });
+                    cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_qucheng_previous: true } });
                 } else {
                     targetx = target.next;
-                    cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_mbqucheng_next: true } });
+                    cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_qucheng_next: true } });
                 }
             } else {
-                if (card.storage.zshy_mbqucheng_next) {
+                if (card.storage.zshy_qucheng_next) {
                     targetx = target.next;
-                    cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_mbqucheng_next: true } });
+                    cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_qucheng_next: true } });
                 } else {
                     targetx = target.previous;
-                    cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_mbqucheng_previous: true } });
+                    cardx = get.autoViewAs({ name: 'sha', isCard: true, storage: { zshy_qucheng_previous: true } });
                 }
             }
             if (player.canUse(cardx, targetx, false)) {
@@ -5390,9 +5390,9 @@ const 袖里乾坤 = {
     },
 
     //墟彻里吉
-    zshy_mbqiangyong: {
+    zshy_qiangyong: {
         audio: 'mbqiangyong',
-        logAudio: (index) => typeof index == 'number' ? 'zshy_mbqiangyong' + index + '.mp3' : 2,
+        logAudio: (index) => typeof index == 'number' ? 'zshy_qiangyong' + index + '.mp3' : 2,
         forced: true,
         trigger: { source: 'damageBegin2' },
         filter(event, player) {
@@ -5439,14 +5439,14 @@ const 袖里乾坤 = {
 
     zshy_zhengjing3: {},
 
-    zshy_mbkubai: {
+    zshy_kubai: {
         audio: 'mbkubai',
         trigger: { player: 'useCard' },
         filter(event, player) {
             if (player !== _status.currentPhase) {
                 return false;
             }
-            const key = ['color', 'suit', 'number'][Math.min(2, player.countMark('zshy_mbkubai'))], evts = player.getHistory('useCard');
+            const key = ['color', 'suit', 'number'][Math.min(2, player.countMark('zshy_kubai'))], evts = player.getHistory('useCard');
             for (let i = 0; i < evts.length; i++) {
                 const evt = evts[i];
                 if (evt == event) {
@@ -5461,7 +5461,7 @@ const 袖里乾坤 = {
         forced: true,
         locked: false,
         logAudio(event, player, name) {
-            const num = Math.min(2, player.countMark('zshy_mbkubai'));
+            const num = Math.min(2, player.countMark('zshy_kubai'));
             const index = num * 2 + 1;
             return [`mbkubai${index}.mp3`, `mbkubai${index + 1}.mp3`];
         },
@@ -5476,15 +5476,15 @@ const 袖里乾坤 = {
                     list = list.filter((i) => typeof i == 'number').sort((a, b) => a - b);
                 }
                 for (const target of game.filterPlayer((current) => current != player).sortBySeat()) {
-                    const name = 'zshy_mbkubai_guanjued';
+                    const name = 'zshy_kubai_guanjued';
                     target.addTempSkill(name);
                     target.storage[name] = list;
                     target.markSkill(name);
                 }
             }
         },
-        derivation: ['zshy_mbkubai_suit', 'zshy_mbkubai_number'],
-        group: 'zshy_mbkubai_guanjue',
+        derivation: ['zshy_kubai_suit', 'zshy_kubai_number'],
+        group: 'zshy_kubai_guanjue',
         subSkill: {
             guanjue: {
                 trigger: {
@@ -5497,7 +5497,7 @@ const 袖里乾坤 = {
                     return player == _status.currentPhase;
                 },
                 async content(event, trigger, player) {
-                    const name = 'zshy_mbkubai';
+                    const name = 'zshy_kubai';
                     get.info(name).init(player, name);
                 }
             },
@@ -5509,12 +5509,12 @@ const 袖里乾坤 = {
                 intro: {
                     markcount: (storage) => storage?.length || 0,
                     content(_1, player) {
-                        const list = player.getStorage('zshy_mbkubai_guanjued'), target = _status.currentPhase;
-                        if (target.hasSkill('zshy_mbkubai')) {
+                        const list = player.getStorage('zshy_kubai_guanjued'), target = _status.currentPhase;
+                        if (target.hasSkill('zshy_kubai')) {
                             if (!list.length) {
                                 return '不能使用牌';
                             }
-                            const level = Math.min(2, target.countMark('zshy_mbkubai')), key = ['颜色', '花色', '点数'][level];
+                            const level = Math.min(2, target.countMark('zshy_kubai')), key = ['颜色', '花色', '点数'][level];
                             return `仅能使用${key}为${get.translation(list)}的牌`;
                         }
                         return '无效果';
@@ -5522,18 +5522,18 @@ const 袖里乾坤 = {
                 },
                 mod: {
                     cardEnabled(card, player) {
-                        const list = player.getStorage('zshy_mbkubai_guanjued'), target = _status.currentPhase;
-                        if (target.hasSkill('zshy_mbkubai') && target != player) {
-                            const level = Math.min(2, target.countMark('zshy_mbkubai')), key = get[['color', 'suit', 'number'][level]](card);
+                        const list = player.getStorage('zshy_kubai_guanjued'), target = _status.currentPhase;
+                        if (target.hasSkill('zshy_kubai') && target != player) {
+                            const level = Math.min(2, target.countMark('zshy_kubai')), key = get[['color', 'suit', 'number'][level]](card);
                             if (key != 'unsure' && !list.includes(key)) {
                                 return false;
                             }
                         }
                     },
                     cardSavable(card, player) {
-                        const list = player.getStorage('zshy_mbkubai_guanjued'), target = _status.currentPhase;
-                        if (target.hasSkill('zshy_mbkubai') && target != player) {
-                            const level = Math.min(2, target.countMark('zshy_mbkubai')), key = get[['color', 'suit', 'number'][level]](card);
+                        const list = player.getStorage('zshy_kubai_guanjued'), target = _status.currentPhase;
+                        if (target.hasSkill('zshy_kubai') && target != player) {
+                            const level = Math.min(2, target.countMark('zshy_kubai')), key = get[['color', 'suit', 'number'][level]](card);
                             if (key != 'unsure' && !list.includes(key)) {
                                 return false;
                             }

@@ -7,9 +7,9 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `wei`,
-        skills: [`zshy_MBshanjia`],
+        skills: [`zshy_mbshanjia`],
     },
-    zshy_AAZZsunhanhua: {
+    zshy_AAZZsunhanhuaMB: {
         names: `孙|寒华`,
         hp: 3,
         maxHp: 3,
@@ -18,7 +18,7 @@ export const 袖里乾坤 = {
         group: `wu`,
         skills: [`zshy_chongxu`, `zshy_miaojian`, `zshy_lianhua`],
     },
-    zshy_AAZZsimashi: {
+    zshy_AAZZsimashiMB: {
         names: `司马|师`,
         hp: 4,
         maxHp: 4,
@@ -29,7 +29,7 @@ export const 袖里乾坤 = {
         isZhugong: true,
         skills: [`zshy_baiyi`, `zshy_jinglve`, `zshy_shanli`],
     },
-    zshy_AAZZlingcao: {
+    zshy_AAZZlingcaoMB: {
         names: `凌|操`,
         hp: 4,
         maxHp: 4,
@@ -39,7 +39,7 @@ export const 袖里乾坤 = {
         skills: [`zshy_dujin`],
     },
     /*
-    zshy_AAZZsunru: {
+    zshy_AAZZsunruMB: {
         names: `孙|茹`,
         hp: 3,
         maxHp: 3,
@@ -48,7 +48,7 @@ export const 袖里乾坤 = {
         group: `wu`,
         skills: [`zshy_yingjian`, `zshy_shixin`],
     },
-    zshy_AAZZliuzan: {
+    zshy_AAZZliuzanMB: {
         names: `留|赞`,
         hp: 4,
         maxHp: 4,
@@ -58,7 +58,7 @@ export const 袖里乾坤 = {
         skills: [`zshy_fenyin`],
     },
 
-    zshy_AAZZpangdegong: {
+    zshy_AAZZpangdegongMB: {
         names: `庞|德公`,
         hp: 3,
         maxHp: 3,
@@ -67,7 +67,7 @@ export const 袖里乾坤 = {
         group: `qun`,
         skills: [`zshy_xinfu_pingcai`, `zshy_xinfu_pdgyingshi`],
     },
-    zshy_AAZZmiheng: {
+    zshy_AAZZmihengMB: {
         names: `祢|衡`,
         hp: 3,
         maxHp: 3,
@@ -77,7 +77,7 @@ export const 袖里乾坤 = {
         skills: [`zshy_kuangcai`, `zshy_shejian`],
     },
 
-    zshy_AAZZmajun: {
+    zshy_AAZZmajunMB: {
         names: `马|钧`,
         hp: 3,
         maxHp: 3,
@@ -86,7 +86,7 @@ export const 袖里乾坤 = {
         group: `wei`,
         skills: [`zshy_xinfu_jingxie`, `zshy_qiaosi`],
     },
-    zshy_AAZZzhengxuan: {
+    zshy_AAZZzhengxuanMB: {
         names: `郑|玄`,
         hp: 3,
         maxHp: 3,
@@ -96,7 +96,7 @@ export const 袖里乾坤 = {
         skills: [`zshy_zhengjing`],
     },
 
-    zshy_AAZznanhualaoxian: {
+    zshy_AAZznanhualaoxianMB: {
         names: `庄|周`,
         hp: 3,
         maxHp: 3,
@@ -105,7 +105,7 @@ export const 袖里乾坤 = {
         group: `qun`,
         skills: [`zshy_yufeng`, `zshy_tianshu`],
     },
-    zshy_AAZZshichangshi: {
+    zshy_AAZZshichangshiMB: {
         names: `张|让-赵|忠-孙|璋-毕|岚-夏|恽-韩|悝-栗|嵩-段|珪-郭|胜-高|望`,
         hp: 1,
         maxHp: 1,
@@ -113,7 +113,7 @@ export const 袖里乾坤 = {
         sex: `male`,
         group: `qun`,
         trashBin: ['sex:male_castrated'],
-        skills: [`zshy_mbdanggu`, `zshy_mbmowang`],
+        skills: [`zshy_danggu`, `zshy_mowang`],
     },
 
     zshy_AAZZzhangfenMB: {
@@ -123,7 +123,7 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `wu`,
-        skills: [`zshy_mbquchong`, `zshy_mbxunjie`],
+        skills: [`zshy_quchong`, `zshy_xunjie`],
     },
     zshy_AAZZcuilingyiMB: {
         names: `崔|null`,
@@ -132,16 +132,16 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `female`,
         group: `wei`,
-        skills: [`zshy_mbcaiqiu`, `zshy_mbxishang`],
+        skills: [`zshy_caiqiu`, `zshy_xishang`],
     },
-    zshy_AAZZzhuji: {
+    zshy_AAZZzhujiMB: {
         names: `朱|绩`,
         hp: 4,
         maxHp: 4,
         hujia: 0,
         sex: `male`,
         group: `wu`,
-        skills: [`zshy_potjiezhu`, `zshy_pothuanshi`],
+        skills: [`zshy_jiezhu`, `zshy_mbhuanshi`],
     },
 
     zshy_AAZZcaoxingMB: {
@@ -151,7 +151,7 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `qun`,
-        skills: [`zshy_mbjinzu`, `zshy_mbanxian`],
+        skills: [`zshy_jinzu`, `zshy_anxian`],
     },
     zshy_AAZZluyuMB: {
         names: `卢|毓`,
@@ -160,7 +160,7 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `wei`,
-        skills: [`zshy_mbbingfa`, `zshy_mbshuxing`],
+        skills: [`zshy_bingfa`, `zshy_shuxing`],
     },
     zshy_AAZZzhangzhiMB: {
         names: `张|芝`,
@@ -169,7 +169,7 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `qun`,
-        skills: [`zshy_mbshiju`],
+        skills: [`zshy_shiju`],
     },
     zshy_AAZZcaozhiMB: {
         names: `曹|植`,
@@ -178,7 +178,7 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `wei`,
-        skills: [`zshy_mbchongsi`, `zshy_mbpeidong`],
+        skills: [`zshy_chongsi`, `zshy_peidong`],
     },
     zshy_AAZZzhouyuMB: {
         names: `周|瑜`,
@@ -187,7 +187,7 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `wu`,
-        skills: [`zshy_mbshouyue`, `zshy_mbdieyin`],
+        skills: [`zshy_shouyue`, `zshy_dieyin`],
     },
     zshy_AAZZliuhuiMB: {
         names: `刘|徽`,
@@ -196,7 +196,7 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `qun`,
-        skills: [`zshy_mbgeyuan`, `zshy_mbchongcha`],
+        skills: [`zshy_geyuan`, `zshy_chongcha`],
     },
 
     zshy_AAZZchelijiMB: {
@@ -206,7 +206,7 @@ export const 袖里乾坤 = {
         hujia: 0,
         sex: `male`,
         group: `qun`,
-        skills: [`zshy_mbqucheng`, `zshy_mbqiangyong`],
+        skills: [`zshy_qucheng`, `zshy_qiangyong`],
     },
  */
 };
@@ -215,138 +215,5 @@ export const characters = {
     ...袖里乾坤,
 };
 
-/**
- * 高级的多种前后缀移除工具
- * @param {string} str - 原始字符串
- * @param {object} options - 配置选项
- * @returns {string} 处理后的字符串
- */
-function advancedAffixRemover(str, options = {}) {
-    const {
-        prefixes = [],
-        suffixes = [],
-        removeAll = false, // 是否移除所有匹配的前后缀
-        caseSensitive = true, // 是否区分大小写
-        trimWhitespace = false // 是否移除前后空格
-    } = options;
-
-    let result = str;
-
-    // 可选：先去除空格
-    if (trimWhitespace) {
-        result = result.trim();
-    }
-
-    // 处理前缀
-    const prefixArray = Array.isArray(prefixes) ? prefixes : [prefixes];
-
-    if (removeAll) {
-        // 移除所有匹配的前缀
-        let prefixRemoved;
-        do {
-            prefixRemoved = false;
-            for (const prefix of prefixArray) {
-                if (!prefix) continue;
-
-                const prefixToCheck = caseSensitive ? prefix : prefix.toLowerCase();
-                const resultToCheck = caseSensitive ? result : result.toLowerCase();
-
-                if (resultToCheck.startsWith(prefixToCheck)) {
-                    result = result.substring(prefix.length);
-                    prefixRemoved = true;
-                    break;
-                }
-            }
-        } while (prefixRemoved);
-    } else {
-        // 只移除第一个匹配的前缀
-        for (const prefix of prefixArray) {
-            if (!prefix) continue;
-
-            const prefixToCheck = caseSensitive ? prefix : prefix.toLowerCase();
-            const resultToCheck = caseSensitive ? result : result.toLowerCase();
-
-            if (resultToCheck.startsWith(prefixToCheck)) {
-                result = result.substring(prefix.length);
-                break;
-            }
-        }
-    }
-
-    // 处理后缀
-    const suffixArray = Array.isArray(suffixes) ? suffixes : [suffixes];
-
-    if (removeAll) {
-        // 移除所有匹配的后缀
-        let suffixRemoved;
-        do {
-            suffixRemoved = false;
-            for (const suffix of suffixArray) {
-                if (!suffix) continue;
-
-                const suffixToCheck = caseSensitive ? suffix : suffix.toLowerCase();
-                const resultToCheck = caseSensitive ? result : result.toLowerCase();
-
-                if (resultToCheck.endsWith(suffixToCheck)) {
-                    result = result.substring(0, result.length - suffix.length);
-                    suffixRemoved = true;
-                    break;
-                }
-            }
-        } while (suffixRemoved);
-    } else {
-        // 只移除第一个匹配的后缀
-        for (const suffix of suffixArray) {
-            if (!suffix) continue;
-
-            const suffixToCheck = caseSensitive ? suffix : suffix.toLowerCase();
-            const resultToCheck = caseSensitive ? result : result.toLowerCase();
-
-            if (resultToCheck.endsWith(suffixToCheck)) {
-                result = result.substring(0, result.length - suffix.length);
-                break;
-            }
-        }
-    }
-
-    return result;
-}
-
-for (const name in characters) {
-    const keywords = ['JMGX', 'MB'];
-    switch (true) {
-        case keywords.some(keyword => name.includes(['JMGX'])):
-            characters[name].img = `extension/诸神寰宇/image/character/zshy_CCXH/${name}.jpg`;
-            characters[name].dieAudios = [`ext:诸神寰宇/audio/character/${name}.mp3`];
-            break;
-        case keywords.some(keyword => name.includes(['MB'])):
-            characters[name].img = `../../../../image/character/mb_${advancedAffixRemover(name, {
-                prefixes: ['zshy_AAZZ'],
-                suffixes: 'MB',
-                removeAll: true,
-                caseSensitive: true,
-            })}.jpg`;
-            characters[name].dieAudios = [`mb_${advancedAffixRemover(name, {
-                prefixes: ['zshy_AAZZ'],
-                suffixes: 'MB',
-                removeAll: true,
-                caseSensitive: true,
-            })}`];
-            break;
-        default:
-            characters[name].img = `../../../../image/character/${advancedAffixRemover(name, {
-                prefixes: ['zshy_AAZZ'],
-                suffixes: keywords,
-                removeAll: true,
-                caseSensitive: true,
-            })}.jpg`;
-            characters[name].dieAudios = [`${advancedAffixRemover(name, {
-                prefixes: ['zshy_AAZZ'],
-                suffixes: keywords,
-                removeAll: true,
-                caseSensitive: true,
-            })}`];
-    }
-}
-
+// 移动版：本包武将全部没有扩展立绘/阵亡语音，统一交由全局「本体素材引用」按名字与本体移动版解析。
 export default characters;

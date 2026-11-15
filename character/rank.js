@@ -245,6 +245,8 @@ export const rank = {
         'zshy_AAZZzhaoyunSP',
     ],
     S: [
+        //兵势篇-奇
+        'zshy_AAZZyujiBSP',
         ...Object.keys(贤君明主),
         //神话再临-其疾如风
         'zshy_AAZZxiaoqiaoSHZL',
