@@ -3,7 +3,7 @@ const 光阴长河 = {
     zshy_jinmie1:  '（盾击声）',
 
     'zshy_AAYAcaopi:die': '此战无功而返，我军锐气已失……',
-    zshy_jinmie_zshy_AAYAcaopi1:  `昔始皇一统六国，朕平吴蜀何尝不可？`,
+    zshy_diye1:  `昔始皇一统六国，朕平吴蜀何尝不可？`,
     zshy_shenzhu1:  `朕于天下无所不容，而况汝乎？`,
     zshy_shenzhu2:  `世子之争素来如此，朕予改封已是仁慈！`,
     zshy_zangshang1:  `众士出生入死，孤当敛而奠之。`,

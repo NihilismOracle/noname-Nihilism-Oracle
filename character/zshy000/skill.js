@@ -7,9 +7,6 @@ let huashenPoolCache = null;
 const 光阴长河 = {
     zshy_jinmie: {//烬灭
         audio: 'ext:诸神寰宇/audio/character:1',
-        audioname2: {
-            zshy_AAYAcaopi: 'zshy_jinmie_zshy_AAYAcaopi',
-        },
         NihilismSkill: true,
         trigger: {
             target: 'useCardToTargeted',
@@ -75,9 +72,6 @@ const 光阴长河 = {
     },
 
     //烬曹丕
-    zshy_jinmie_zshy_AAYAcaopi: {//烬灭
-        audio: 'ext:诸神寰宇/audio/character:1',
-    },
     zshy_shenzhu: {//神逐
         audio: 'ext:诸神寰宇/audio/character:2',
         NihilismSkill: true,
@@ -347,7 +341,7 @@ const 光阴长河 = {
         },
     },
     zshy_diye: {//帝业
-        audio: 'ext:诸神寰宇/audio/character:2',
+        audio: 'ext:诸神寰宇/audio/character:1',
         NihilismSkill: true,
         marktext: '业',
         intro: {
